@@ -1,15 +1,17 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import Login from './components/Login'
-import Register from './components/Register'
-import ForgotPassword from './components/ForgotPassword'
-import Dashboard from './components/Dashboard'
-import DashboardHome from './components/DashboardHome'
-import PortfolioGenerator from './components/PortfolioGenerator'
-import ResumeBuilder from './components/ResumeBuilder'
-import JobTracker from './components/JobTracker'
-import ATSAnalyzer from './components/ATSAnalyzer'
-import MockInterview from './components/MockInterview'
-import AptitudeTest from './components/AptitudeTest'
+// Pages
+import Login from './pages/Login'
+import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import Dashboard from './pages/Dashboard'
+import DashboardHome from './pages/DashboardHome'
+// Feature Components
+import PortfolioGenerator from './components/features/PortfolioGenerator'
+import ResumeBuilder from './components/features/ResumeBuilder'
+import JobTracker from './components/features/JobTracker'
+import ATSAnalyzer from './components/features/ATSAnalyzer'
+import MockInterview from './components/features/MockInterview'
+import AptitudeTest from './components/features/AptitudeTest'
 
 function App() {
   return (
