@@ -33,5 +33,5 @@ exports.login = async (req, res) => {
     { expiresIn: process.env.JWT_EXPIRE }
   );
 
-  res.json({ token });
+  res.json({ token, message:"Login Successfully !"});
 };

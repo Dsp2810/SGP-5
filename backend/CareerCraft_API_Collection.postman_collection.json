@@ -1,0 +1,247 @@
+{
+	"info": {
+		"_postman_id": "careercraft-api-collection",
+		"name": "CareerCraft API Collection",
+		"description": "Complete API collection for CareerCraft Backend Testing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Dhaval Patel\",\n  \"email\": \"dhaval@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/auth/register",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user"
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"TOKEN\", jsonData.token);",
+									"    pm.environment.set(\"USER_ID\", jsonData.user._id);",
+									"    console.log(\"Token saved:\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"dhaval@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/auth/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login and get JWT token"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for user registration and login"
+		},
+		{
+			"name": "Resume Management",
+			"item": [
+				{
+					"name": "Upload Resume",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"resumeData\": {\n    \"personalInfo\": {\n      \"name\": \"Dhaval Patel\",\n      \"email\": \"dhaval@example.com\",\n      \"phone\": \"+91-9876543210\",\n      \"location\": \"Mumbai, India\"\n    },\n    \"education\": [\n      {\n        \"degree\": \"B.Tech in Computer Science\",\n        \"institution\": \"ABC University\",\n        \"year\": \"2020-2024\",\n        \"cgpa\": \"8.5\"\n      }\n    ],\n    \"experience\": [\n      {\n        \"company\": \"Tech Corp\",\n        \"position\": \"Backend Developer Intern\",\n        \"duration\": \"June 2023 - Aug 2023\",\n        \"description\": \"Developed REST APIs using Node.js and Express\"\n      }\n    ],\n    \"skills\": [\"Node.js\", \"Express.js\", \"MongoDB\", \"React.js\", \"AWS\"],\n    \"projects\": [\n      {\n        \"name\": \"CareerCraft\",\n        \"description\": \"AI-powered career platform\",\n        \"technologies\": [\"Node.js\", \"React\", \"MongoDB\", \"AWS\"]\n      }\n    ]\n  },\n  \"version\": \"1.0\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/resume/upload",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"resume",
+								"upload"
+							]
+						},
+						"description": "Upload or update resume data"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Resume History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/resume/history",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"resume",
+								"history"
+							]
+						},
+						"description": "Get all resume versions for the logged-in user"
+					},
+					"response": []
+				}
+			],
+			"description": "Resume upload and version control endpoints"
+		},
+		{
+			"name": "Application Tracking",
+			"item": [
+				{
+					"name": "Create Application",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"company\": \"Google\",\n  \"position\": \"Backend Developer\",\n  \"status\": \"applied\",\n  \"appliedDate\": \"2025-12-30\",\n  \"jobDescription\": \"Looking for experienced backend developer with Node.js expertise\",\n  \"notes\": \"Applied through LinkedIn\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/application",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"application"
+							]
+						},
+						"description": "Create a new job application entry"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Applications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/application",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"application"
+							]
+						},
+						"description": "Get all job applications for the logged-in user"
+					},
+					"response": []
+				}
+			],
+			"description": "Application tracking and management endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}
