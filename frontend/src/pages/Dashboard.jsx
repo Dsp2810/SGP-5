@@ -1,10 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [userName, setUserName] = useState('User');
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Decode token to get user info
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // You can fetch full user details from backend if needed
+        // For now, we'll use a placeholder or fetch from an API
+        fetchUserDetails();
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
+
+  const fetchUserDetails = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUserName(data.name || 'User');
+      }
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -121,12 +155,11 @@ function Dashboard() {
           <div className="p-4 border-t border-gray-200">
             <div className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center'} py-3`}>
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-700 to-gray-500 flex items-center justify-center text-white font-semibold">
-                U
+                {userName.charAt(0).toUpperCase()}
               </div>
               {isSidebarOpen && (
                 <div className="ml-3">
-                  <p className="text-sm font-semibold text-gray-800">User Name</p>
-                  <p className="text-xs text-gray-500">Student</p>
+                  <p className="text-sm font-semibold text-gray-800">{userName}</p>
                 </div>
               )}
             </div>
