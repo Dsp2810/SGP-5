@@ -5,10 +5,10 @@ const {
   getApplications
 } = require("../controllers/application.controller");
 
-const authMiddleware = require("../middleware/auth.middleware");
+const { protect } = require("../middleware/auth.middleware");
 
 // Protected Routes
-router.post("/", authMiddleware, createApplication);
-router.get("/", authMiddleware, getApplications);
+router.post("/", protect, createApplication);
+router.get("/", protect, getApplications);
 
 module.exports = router;

@@ -4,5 +4,6 @@ const router = express.Router();
 router.use("/auth", require("./auth.routes"));
 router.use("/resume", require("./resume.routes"));
 router.use("/application", require("./application.routes"));
+router.use("/jobs", require("./job.routes"));
 
 module.exports = router;

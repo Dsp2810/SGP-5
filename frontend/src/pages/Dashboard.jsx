@@ -80,7 +80,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-white shadow-lg transition-all duration-300 ease-in-out`}>
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-white shadow-lg transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen`}>
         <div className="h-full flex flex-col">
           {/* Header */}
           <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -146,7 +146,7 @@ function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className={`flex-1 overflow-y-auto ${isSidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300 ease-in-out`}>
         <div className="max-w-7xl mx-auto p-8">
           <Outlet />
         </div>

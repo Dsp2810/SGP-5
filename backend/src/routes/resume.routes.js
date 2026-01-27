@@ -5,10 +5,10 @@ const {
   getResumeHistory
 } = require("../controllers/resume.controller");
 
-const authMiddleware = require("../middleware/auth.middleware");
+const { protect } = require("../middleware/auth.middleware");
 
 // Protected Routes
-router.post("/upload", authMiddleware, uploadResume);
-router.get("/history", authMiddleware, getResumeHistory);
+router.post("/upload", protect, uploadResume);
+router.get("/history", protect, getResumeHistory);
 
 module.exports = router;
