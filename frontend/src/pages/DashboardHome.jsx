@@ -57,7 +57,7 @@ function DashboardHome() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-gray-700 to-gray-600 rounded-2xl p-8 text-white shadow-xl">
-        <h1 className="text-4xl font-bold mb-2">Welcome to CareerCraft! 🚀</h1>
+        <h1 className="text-4xl font-bold mb-2">Welcome to Placify! 🚀</h1>
         <p className="text-gray-100 text-lg">Your all-in-one career development platform</p>
       </div>
 

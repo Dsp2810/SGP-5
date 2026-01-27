@@ -12,6 +12,8 @@ import JobTracker from './components/features/JobTracker'
 import ATSAnalyzer from './components/features/ATSAnalyzer'
 import MockInterview from './components/features/MockInterview'
 import AptitudeTest from './components/features/AptitudeTest'
+// Protected Route
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
@@ -23,7 +25,11 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         
         {/* Dashboard Routes */}
-        <Route path="/dashboard" element={<Dashboard />}>
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }>
           <Route index element={<DashboardHome />} />
           <Route path="portfolio" element={<PortfolioGenerator />} />
           <Route path="resume" element={<ResumeBuilder />} />

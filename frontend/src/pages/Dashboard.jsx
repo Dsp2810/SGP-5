@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   const menuItems = [
     {
@@ -80,7 +86,7 @@ function Dashboard() {
           <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             {isSidebarOpen && (
               <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                CareerCraft
+                Placify
               </h1>
             )}
             <button
@@ -124,6 +130,17 @@ function Dashboard() {
                 </div>
               )}
             </div>
+            
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className={`flex items-center ${isSidebarOpen ? 'px-4 w-full' : 'px-3 justify-center'} py-3 rounded-xl transition-all duration-200 text-red-600 hover:bg-red-50 mt-2`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              {isSidebarOpen && <span className="ml-3 font-medium">Logout</span>}
+            </button>
           </div>
         </div>
       </aside>
