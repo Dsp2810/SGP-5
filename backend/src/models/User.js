@@ -25,6 +25,16 @@ const userSchema = new mongoose.Schema({
     default: "student"
   },
 
+  resetPasswordOTP: {
+    type: String,
+    select: false
+  },
+
+  resetPasswordOTPExpire: {
+    type: Date,
+    select: false
+  },
+
   createdAt: {
     type: Date,
     default: Date.now
