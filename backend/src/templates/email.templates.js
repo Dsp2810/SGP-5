@@ -1,5 +1,5 @@
 /**
- * Email Templates for CareerCraft
+ * Email Templates for Placify
  * Professional HTML email templates for authentication and notifications
  */
 
@@ -129,7 +129,7 @@ const otpEmailTemplate = (name, otp) => {
         
         <div class="content">
           <p>Hello <strong>${name}</strong>,</p>
-          <p>We received a request to reset your password for your <span class="brand">CareerCraft</span> account.</p>
+          <p>We received a request to reset your password for your <span class="brand">Placify</span> account.</p>
           
           <div class="otp-box">
             <p class="otp-label">Your OTP Code</p>
@@ -144,18 +144,18 @@ const otpEmailTemplate = (name, otp) => {
           <div class="info-box">
             <p><strong>🛡️ Security Tips:</strong></p>
             <ul>
-              <li>Never share this OTP with anyone, including CareerCraft support</li>
+              <li>Never share this OTP with anyone, including Placify support</li>
               <li>We will never ask for your OTP via phone or email</li>
               <li>If you didn't request this reset, please ignore this email and secure your account</li>
             </ul>
           </div>
 
-          <p style="margin-top: 30px;">Best regards,<br><strong class="brand">CareerCraft Team</strong></p>
+          <p style="margin-top: 30px;">Best regards,<br><strong class="brand">Placify Team</strong></p>
         </div>
 
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
-          <p>&copy; 2026 <span class="brand">CareerCraft</span>. All rights reserved.</p>
+          <p>&copy; 2026 <span class="brand">Placify</span>. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -285,7 +285,7 @@ const passwordResetSuccessTemplate = (name) => {
             <p>🎉 Your password has been successfully reset!</p>
           </div>
 
-          <p>You can now log in to your <span class="brand">CareerCraft</span> account using your new password.</p>
+          <p>You can now log in to your <span class="brand">Placify</span> account using your new password.</p>
 
           <div style="text-align: center; margin: 30px 0;">
             <a href="#" class="button">Go to Login</a>
@@ -295,20 +295,20 @@ const passwordResetSuccessTemplate = (name) => {
             <p><strong>🔒 Security Reminder:</strong></p>
             <ul>
               <li>Keep your password secure and don't share it with anyone</li>
-              <li>Use a unique password for CareerCraft</li>
+              <li>Use a unique password for Placify</li>
               <li>If you didn't make this change, please contact our support team immediately</li>
               <li>Consider enabling two-factor authentication for extra security</li>
             </ul>
           </div>
 
-          <p style="margin-top: 30px;">Thank you for using <span class="brand">CareerCraft</span>!</p>
-          <p>Best regards,<br><strong class="brand">CareerCraft Team</strong></p>
+          <p style="margin-top: 30px;">Thank you for using <span class="brand">Placify</span>!</p>
+          <p>Best regards,<br><strong class="brand">Placify Team</strong></p>
         </div>
 
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
-          <p>If you need help, contact us at support@careercraft.com</p>
-          <p>&copy; 2026 <span class="brand">CareerCraft</span>. All rights reserved.</p>
+          <p>If you need help, contact us at support@Placify.com</p>
+          <p>&copy; 2026 <span class="brand">Placify</span>. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -382,18 +382,18 @@ const welcomeEmailTemplate = (name) => {
       <div class="container">
         <div class="header">
           <div class="header-icon">👋</div>
-          <h1>Welcome to CareerCraft!</h1>
+          <h1>Welcome to Placify!</h1>
         </div>
         
         <div class="content">
           <p>Hello <strong>${name}</strong>,</p>
-          <p>Welcome to <span class="brand">CareerCraft</span>! We're excited to have you on board.</p>
+          <p>Welcome to <span class="brand">Placify</span>! We're excited to have you on board.</p>
           <p>Your account has been successfully created. You can now access all our features to boost your career journey.</p>
-          <p>Best regards,<br><strong class="brand">CareerCraft Team</strong></p>
+          <p>Best regards,<br><strong class="brand">Placify Team</strong></p>
         </div>
 
         <div class="footer">
-          <p>&copy; 2026 <span class="brand">CareerCraft</span>. All rights reserved.</p>
+          <p>&copy; 2026 <span class="brand">Placify</span>. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -660,9 +660,9 @@ const registrationConfirmationTemplate = (name, email) => {
           </div>
           
           <div class="content">
-            <h2>Welcome to CareerCraft, ${name}!</h2>
+            <h2>Welcome to Placify, ${name}!</h2>
             
-            <p>Thank you for joining <span class="brand">CareerCraft</span>. We're thrilled to have you as part of our growing community of professionals.</p>
+            <p>Thank you for joining <span class="brand">Placify</span>. We're thrilled to have you as part of our growing community of professionals.</p>
             
             <div class="confirmation-box">
               <h3>Account Details</h3>
@@ -724,7 +724,7 @@ const registrationConfirmationTemplate = (name, email) => {
 
             <p style="margin-top: 30px;">If you have any questions or need assistance, our support team is here to help.</p>
             
-            <p style="margin-top: 20px;">Best regards,<br><strong class="brand">CareerCraft Team</strong></p>
+            <p style="margin-top: 20px;">Best regards,<br><strong class="brand">Placify Team</strong></p>
           </div>
 
           <div class="footer">
@@ -740,7 +740,7 @@ const registrationConfirmationTemplate = (name, email) => {
               <a href="#">Terms of Service</a> &nbsp;|&nbsp; 
               <a href="#">Help Center</a>
             </p>
-            <p style="margin-top: 20px; color: #aaa;">&copy; 2026 <span class="brand">CareerCraft</span>. All rights reserved.</p>
+            <p style="margin-top: 20px; color: #aaa;">&copy; 2026 <span class="brand">Placify</span>. All rights reserved.</p>
           </div>
         </div>
       </div>

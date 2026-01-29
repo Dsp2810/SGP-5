@@ -1,6 +1,7 @@
 /**
  * Professional LaTeX Resume Template Generator
- * Generates ATS-friendly, well-formatted resume with proper styling
+ * Generates trendy, ATS-friendly resumes with modern formatting
+ * Based on professional resume styling
  */
 
 const generateLatexResume = (data) => {
@@ -14,22 +15,14 @@ const generateLatexResume = (data) => {
     achievements
   } = data;
 
-  // Build contact line with proper separators
-  const contactLine = [
+  // Build contact line with social links combined
+  const contactParts = [
     personalInfo.email,
     personalInfo.phone,
     personalInfo.location
-  ].filter(Boolean).join(' $|$ ');
-
-  // Build social links line
-  const socialLinks = [];
-  if (personalInfo.linkedin) {
-    socialLinks.push(`\\href{${personalInfo.linkedin}}{LinkedIn}`);
-  }
-  if (personalInfo.github) {
-    socialLinks.push(`\\href{${personalInfo.github}}{GitHub}`);
-  }
-  const socialLine = socialLinks.length > 0 ? socialLinks.join(' $|$ ') : '';
+  ].filter(Boolean);
+  
+  const contactLine = contactParts.join(' | ');
 
   return `\\documentclass[a4paper,11pt]{article}
 \\usepackage[utf8]{inputenc}
@@ -38,76 +31,109 @@ const generateLatexResume = (data) => {
 \\usepackage{hyperref}
 \\usepackage{titlesec}
 \\usepackage{xcolor}
+\\usepackage{fancyhdr}
+\\usepackage{ragged2e}
 
 % Page setup
-\\geometry{left=0.75in,right=0.75in,top=0.75in,bottom=0.75in}
-\\setlist{nosep, leftmargin=*}
+\\geometry{left=0.7in,right=0.7in,top=0.5in,bottom=0.5in}
+\\setlist{nosep, leftmargin=20pt}
 \\pagestyle{empty}
 
 % Hyperlink setup (ATS-friendly)
 \\hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    urlcolor=blue,
+    linkcolor=black,
+    urlcolor=black,
     pdfborder={0 0 0}
 }
 
-% Section formatting
-\\titleformat{\\section}{\\large\\bfseries\\scshape}{}{0em}{}[\\titlerule]
-\\titlespacing{\\section}{0pt}{12pt}{6pt}
+% Section formatting - Clean and Professional
+\\titleformat{\\section}
+    {\\vspace{-3pt}\\fontsize{12pt}{12pt}\\bfseries}
+    {}
+    {0pt}
+    {}
+    [\\vspace{-8pt}\\hrule\\vspace{4pt}]
+
+\\titlespacing{\\section}{0pt}{8pt}{4pt}
+
+% Use justified text
+\\justifying
 
 \\begin{document}
 
-% Header
+% Header - Compact 2-line format
 \\begin{center}
-{\\LARGE\\bfseries ${personalInfo.name}}\\\\[3pt]
-${contactLine}${socialLine ? `\\\\[2pt]\n${socialLine}` : ''}
+{\\fontsize{16pt}{16pt}\\selectfont\\bfseries ${personalInfo.name}}\\\\[3pt]
+{\\small ${contactLine}}
 \\end{center}
 
-\\vspace{8pt}
+\\vspace{6pt}
 
 % Education Section
 \\section*{EDUCATION}
-${education.map(edu => `\\textbf{${edu.degree}} \\hfill ${edu.startDate} -- ${edu.endDate}\\\\
-${edu.institution}${edu.cgpa ? ` \\hfill \\textit{CGPA: ${edu.cgpa}}` : ''}\\\\[4pt]`).join('\n')}
+${education.map(edu => {
+  let eduLine = `\\textbf{${edu.degree}}`;
+  if (edu.specialization) {
+    eduLine += ` in ${edu.specialization}`;
+  }
+  eduLine += ` \\hfill ${edu.endDate}`;
+  let result = eduLine + `\\\\\n${edu.institution}`;
+  if (edu.cgpa) {
+    result += ` \\hfill \\textit{CGPA: ${edu.cgpa}}`;
+  }
+  if (edu.details) {
+    result += `\\\\\n\\small ${edu.details}`;
+  }
+  result += `\\\\\n`;
+  return result;
+}).join('\n')}
 
-${experience && experience.length > 0 ? `% Experience Section
+${experience && experience.length > 0 ? `% Professional Experience
 \\section*{EXPERIENCE}
 ${experience.map(exp => `\\textbf{${exp.position}} \\hfill ${exp.startDate} -- ${exp.endDate}\\\\
-\\textit{${exp.company}}\\\\[2pt]
-\\begin{itemize}[topsep=2pt]
+\\textit{${exp.company}}${exp.location ? ` | ${exp.location}` : ''}\\\\\n\\vspace{2pt}
+\\begin{itemize}[topsep=0pt, itemsep=2pt]
 ${exp.responsibilities.map(resp => `  \\item ${resp}`).join('\n')}
 \\end{itemize}
 \\vspace{4pt}`).join('\n\n')}
+
 ` : ''}
 
 % Projects Section
-\\section*{PROJECTS}
-${projects.map(proj => `\\textbf{${proj.title}}${proj.link ? ` -- \\href{${proj.link}}{[Link]}` : ''}\\\\
-${proj.description}\\\\
-\\textit{Technologies: ${proj.technologies.join(', ')}}\\\\[4pt]`).join('\n')}
+${projects && projects.length > 0 ? `\\section*{PROJECTS}
+${projects.map(proj => {
+  let projLine = `\\textbf{${proj.title}}`;
+  if (proj.link) {
+    projLine += ` \\hfill \\href{${proj.link}}{[GitHub]}`;
+  }
+  projLine += `\\\\\n${proj.description}`;
+  if (proj.technologies && proj.technologies.length > 0) {
+    projLine += `\\\\\n\\textit{Tech: ${proj.technologies.join(', ')}}`;
+  }
+  projLine += `\\\\\n`;
+  return projLine;
+}).join('\n')}
+
+` : ''}
 
 % Technical Skills Section
 \\section*{TECHNICAL SKILLS}
-\\begin{itemize}[topsep=2pt]
 ${Object.entries(skills).map(([category, skillList]) => {
   const skillsStr = Array.isArray(skillList) ? skillList.join(', ') : skillList;
-  return `  \\item \\textbf{${category}:} ${skillsStr}`;
-}).join('\n')}
-\\end{itemize}
+  return `\\textbf{${category}:} ${skillsStr}`;
+}).join('\\\\\n')}
 
-${certifications && certifications.length > 0 ? `% Certifications Section
-\\section*{CERTIFICATIONS}
-\\begin{itemize}[topsep=2pt]
-${certifications.map(cert => `  \\item \\textbf{${cert.name}} -- ${cert.issuer} \\hfill ${cert.date}`).join('\n')}
-\\end{itemize}
+${certifications && certifications.length > 0 ? `\\section*{CERTIFICATIONS}
+${certifications.map(cert => `\\textbf{${cert.name}}${cert.issuer ? ` -- ${cert.issuer}` : ''}${cert.date ? ` \\hfill ${cert.date}` : ''}`).join('\\\\\n')}
+
 ` : ''}
 
-${achievements && achievements.length > 0 ? `% Achievements Section
-\\section*{ACHIEVEMENTS}
-\\begin{itemize}[topsep=2pt]
+${achievements && achievements.length > 0 ? `\\section*{ACHIEVEMENTS & AWARDS}
+\\begin{itemize}[topsep=0pt, itemsep=2pt]
 ${achievements.map(ach => `  \\item ${ach}`).join('\n')}
 \\end{itemize}
+
 ` : ''}
 
 \\end{document}`;

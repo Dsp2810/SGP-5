@@ -19,9 +19,9 @@ const colors = {
 const testUser = {
   name: 'Banti patel',
   email: '23cs058@charusat.edu.in', // Your email from .env
-  password: 'banti2010'
+  password: 'banti@2010'
 };
-const newPassword = 'banti@2010';
+const newPassword = 'banti2010';
 
 async function makeRequest(endpoint, data) {
   try {

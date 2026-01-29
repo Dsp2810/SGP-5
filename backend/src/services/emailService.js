@@ -28,9 +28,9 @@ class EmailService {
    */
   async sendOTPEmail(email, otp, name) {
     const mailOptions = {
-      from: `"CareerCraft" <${process.env.EMAIL_USER}>`,
+      from: `"Placify" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Password Reset OTP - CareerCraft',
+      subject: 'Password Reset OTP - Placify',
       html: otpEmailTemplate(name, otp)
     };
 
@@ -48,9 +48,9 @@ class EmailService {
    */
   async sendPasswordResetSuccessEmail(email, name) {
     const mailOptions = {
-      from: `"CareerCraft" <${process.env.EMAIL_USER}>`,
+      from: `"Placify" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Password Reset Successful - CareerCraft',
+      subject: 'Password Reset Successful - Placify',
       html: passwordResetSuccessTemplate(name)
     };
 
@@ -69,9 +69,9 @@ class EmailService {
    */
   async sendRegistrationConfirmation(email, name) {
     const mailOptions = {
-      from: `"CareerCraft" <${process.env.EMAIL_USER}>`,
+      from: `"Placify" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Welcome to CareerCraft - Registration Confirmed',
+      subject: 'Welcome to Placify - Registration Confirmed',
       html: registrationConfirmationTemplate(name, email)
     };
 
