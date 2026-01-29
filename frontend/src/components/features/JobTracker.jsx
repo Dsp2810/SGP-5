@@ -14,9 +14,8 @@ function JobTracker() {
     const cachedJobs = sessionStorage.getItem('jobsData');
     if (cachedJobs) {
       setJobs(JSON.parse(cachedJobs));
-    } else {
-      fetchJobs();
     }
+    // API will only be called when user clicks "Search Jobs" button
   }, []);
 
   const fetchJobs = async () => {

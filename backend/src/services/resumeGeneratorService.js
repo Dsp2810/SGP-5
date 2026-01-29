@@ -178,61 +178,75 @@ class ResumeGeneratorService {
       }
 
       // ============ PROJECTS SECTION ============
-      sections.push(
-        new Paragraph({
-          text: 'PROJECTS',
-          heading: HeadingLevel.HEADING_1,
-          spacing: { before: 200, after: 100 },
-          thematicBreak: true
-        })
-      );
-
-      projects.forEach((proj, index) => {
+      if (projects && projects.length > 0) {
         sections.push(
           new Paragraph({
-            children: [
-              new TextRun({ text: proj.title, bold: true }),
-              ...(proj.link ? [new TextRun({ text: ` | ${proj.link}`, italics: true })] : [])
-            ],
-            spacing: { after: 50 }
-          }),
-          new Paragraph({
-            text: proj.description,
-            spacing: { after: 50 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'Technologies: ', italics: true }),
-              new TextRun({ text: proj.technologies.join(', ') })
-            ],
-            spacing: { after: index < projects.length - 1 ? 150 : 200 }
+            text: 'PROJECTS',
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200, after: 100 },
+            thematicBreak: true
           })
         );
-      });
+
+        projects.forEach((proj, index) => {
+          sections.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: proj.title, bold: true }),
+                ...(proj.link ? [new TextRun({ text: ` | ${proj.link}`, italics: true })] : [])
+              ],
+              spacing: { after: 50 }
+            }),
+            new Paragraph({
+              text: proj.description,
+              spacing: { after: 50 }
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Technologies: ', italics: true }),
+                new TextRun({ text: proj.technologies.join(', ') })
+              ],
+              spacing: { after: index < projects.length - 1 ? 150 : 200 }
+            })
+          );
+        });
+      }
 
       // ============ SKILLS SECTION ============
-      sections.push(
-        new Paragraph({
-          text: 'TECHNICAL SKILLS',
-          heading: HeadingLevel.HEADING_1,
-          spacing: { before: 200, after: 100 },
-          thematicBreak: true
-        })
-      );
-
-      Object.entries(skills).forEach(([category, skillList], index) => {
-        const skillsStr = Array.isArray(skillList) ? skillList.join(', ') : skillList;
+      if (skills && (skills.technical?.length > 0 || skills.soft?.length > 0)) {
         sections.push(
           new Paragraph({
-            children: [
-              new TextRun({ text: `${category}: `, bold: true }),
-              new TextRun({ text: skillsStr })
-            ],
-            bullet: { level: 0 },
-            spacing: { after: index < Object.keys(skills).length - 1 ? 50 : 200 }
+            text: 'SKILLS',
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200, after: 100 },
+            thematicBreak: true
           })
         );
-      });
+
+        if (skills.technical && skills.technical.length > 0) {
+          sections.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Technical Skills: ', bold: true }),
+                new TextRun({ text: skills.technical.join(', ') })
+              ],
+              spacing: { after: 100 }
+            })
+          );
+        }
+
+        if (skills.soft && skills.soft.length > 0) {
+          sections.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Soft Skills: ', bold: true }),
+                new TextRun({ text: skills.soft.join(', ') })
+              ],
+              spacing: { after: 200 }
+            })
+          );
+        }
+      }
 
       // ============ CERTIFICATIONS SECTION ============
       if (certifications && certifications.length > 0) {

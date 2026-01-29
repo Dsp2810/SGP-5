@@ -4,37 +4,53 @@ const jwt = require("jsonwebtoken");
 const emailService = require("../services/emailService");
 
 exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
-  if (userExists)
-    return res.status(400).json({ message: "User already exists" });
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
 
-  const user = await User.create({ name, email, password });
+    const userExists = await User.findOne({ email: normalizedEmail });
+    if (userExists)
+      return res.status(400).json({ message: "User already exists" });
 
-  res.status(201).json({
-    message: "User registered successfully"
-  });
+    const user = await User.create({ name, email: normalizedEmail, password });
+
+    res.status(201).json({
+      message: "User registered successfully"
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ message: "Registration failed. Please try again." });
+  }
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select("+password");
-  if (!user)
-    return res.status(401).json({ message: "Invalid credentials" });
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch)
-    return res.status(401).json({ message: "Invalid credentials" });
+    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+    if (!user)
+      return res.status(401).json({ message: "Invalid credentials" });
 
-  const token = jwt.sign(
-    { id: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE }
-  );
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid credentials" });
 
-  res.json({ token, message:"Login Successfully !"});
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE }
+    );
+
+    res.json({ token, message:"Login Successfully !"});
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: "Login failed. Please try again." });
+  }
 };
 
 exports.getMe = async (req, res) => {
@@ -68,8 +84,11 @@ exports.forgotPassword = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({ message: "No account found with this email" });
     }
@@ -87,7 +106,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // Send OTP email
-    await emailService.sendOTPEmail(email, otp, user.name);
+    await emailService.sendOTPEmail(normalizedEmail, otp, user.name);
 
     res.json({ 
       success: true,
@@ -112,8 +131,11 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ message: "Email and OTP are required" });
     }
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user with OTP fields
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email: normalizedEmail })
       .select('+resetPasswordOTP +resetPasswordOTPExpire');
 
     if (!user) {
@@ -168,8 +190,11 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user with OTP fields
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email: normalizedEmail })
       .select('+resetPasswordOTP +resetPasswordOTPExpire +password');
 
     if (!user) {
@@ -204,7 +229,7 @@ exports.resetPassword = async (req, res) => {
     await user.save();
 
     // Send success email
-    await emailService.sendPasswordResetSuccessEmail(email, user.name);
+    await emailService.sendPasswordResetSuccessEmail(normalizedEmail, user.name);
 
     res.json({ 
       success: true,

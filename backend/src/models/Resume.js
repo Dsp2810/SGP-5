@@ -12,9 +12,25 @@ const resumeSchema = new mongoose.Schema({
     required: true
   },
 
+  resumeData: {
+    type: Object,
+    default: null
+  },
+
   resumeUrl: {
     type: String,
     required: true
+  },
+
+  filename: {
+    type: String,
+    required: true
+  },
+
+  format: {
+    type: String,
+    enum: ['pdf', 'docx'],
+    default: 'docx'
   },
 
   atsScore: {

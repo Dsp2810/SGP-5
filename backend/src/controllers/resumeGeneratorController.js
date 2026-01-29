@@ -6,20 +6,13 @@ const path = require('path');
 /**
  * Generate Resume from User Data
  * POST /api/resume/generate
- * Body: { resumeData: {...}, format: 'pdf' | 'docx' }
+ * Body: { resumeData: {...}, format: 'docx' }
+ * Always generates DOCX. Frontend handles PDF conversion if needed.
  */
 exports.generateResume = async (req, res) => {
   try {
-    const { resumeData, format = 'pdf' } = req.body;
+    const { resumeData } = req.body;
     const userId = req.user.id;
-
-    // Validate format
-    if (!['pdf', 'docx'].includes(format.toLowerCase())) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid format. Use "pdf" or "docx"' 
-      });
-    }
 
     // Validate resume data structure
     const validation = ResumeValidator.validate(resumeData);
@@ -35,15 +28,8 @@ exports.generateResume = async (req, res) => {
     // Use sanitized data for generation
     const sanitizedData = validation.sanitizedData;
 
-    // Generate file based on format
-    let result;
-    const formatLower = format.toLowerCase();
-    
-    if (formatLower === 'pdf') {
-      result = await resumeGeneratorService.generatePDF(sanitizedData, userId);
-    } else {
-      result = await resumeGeneratorService.generateDOCX(sanitizedData, userId);
-    }
+    // Generate DOCX file
+    const result = await resumeGeneratorService.generateDOCX(sanitizedData, userId);
 
     // Get latest version number for this user
     const latestResume = await Resume.findOne({ userId }).sort({ version: -1 });
@@ -56,7 +42,7 @@ exports.generateResume = async (req, res) => {
       resumeData: sanitizedData, // Store complete data for version history
       resumeUrl: result.url,
       filename: result.filename,
-      format: formatLower
+      format: 'docx'
     });
 
     await resume.save();
@@ -68,7 +54,7 @@ exports.generateResume = async (req, res) => {
         version: newVersion,
         downloadUrl: result.url,
         filename: result.filename,
-        format: formatLower,
+        format: 'docx',
         createdAt: resume.createdAt
       }
     });

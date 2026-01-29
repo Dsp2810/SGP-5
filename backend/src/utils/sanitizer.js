@@ -132,6 +132,24 @@ class SanitizerUtils {
   }
 
   /**
+   * General text sanitization (basic HTML entity encoding)
+   * @param {string} text - Text to sanitize
+   * @returns {string} - Sanitized text
+   */
+  static sanitizeText(text) {
+    if (!text || typeof text !== 'string') return '';
+    
+    // Basic sanitization - remove dangerous characters and trim
+    return text
+      .trim()
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
+  }
+
+  /**
    * Truncate text to specified length
    * @param {string} text - Text to truncate
    * @param {number} maxLength - Maximum length

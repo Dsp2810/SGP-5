@@ -1,31 +1,93 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 function ForgotPassword() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
-  const handleEmailSubmit = (e) => {
-    e.preventDefault();
-    // TODO: Call API to send OTP to email
-    console.log('Sending OTP to:', email);
-    setMessage('OTP has been sent to your email');
-    setStep(2);
+  // OTP Timer - 10 minutes (600 seconds)
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [timeLeft]);
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleOtpSubmit = (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Call API to verify OTP
-    console.log('Verifying OTP:', otp);
-    setMessage('OTP verified successfully');
-    setStep(3);
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send OTP');
+      }
+
+      setMessage(data.message);
+      setStep(2);
+      setTimeLeft(600); // 10 minutes
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePasswordReset = (e) => {
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase().trim(), otp }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid OTP');
+      }
+
+      setMessage(data.message);
+      setStep(3);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e) => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
@@ -37,15 +99,36 @@ function ForgotPassword() {
       setMessage('Password must be at least 6 characters long');
       return;
     }
+
+    setLoading(true);
+    setMessage('');
     
-    // TODO: Call API to reset password
-    console.log('Password reset for:', email);
-    setMessage('Password reset successfully! Redirecting to login...');
-    
-    // Redirect to login after 2 seconds
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 2000);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase().trim(), otp, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to reset password');
+      }
+
+      setMessage(data.message);
+      
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -116,9 +199,10 @@ function ForgotPassword() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-900 hover:to-black focus:ring-4 focus:ring-gray-300 font-semibold transition duration-200 transform hover:scale-[1.02] shadow-lg"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-900 hover:to-black focus:ring-4 focus:ring-gray-300 font-semibold transition duration-200 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Send OTP
+              {loading ? 'Sending...' : 'Send OTP'}
             </button>
           </form>
         )}
@@ -150,6 +234,23 @@ function ForgotPassword() {
               <p className="mt-2 text-sm text-gray-500 text-center">
                 OTP sent to {email}
               </p>
+              {timeLeft > 0 && (
+                <div className="mt-2 text-center">
+                  <p className="text-sm font-semibold text-gray-700">
+                    ⏱️ Time remaining: <span className="text-red-600">{formatTime(timeLeft)}</span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    OTP will expire after 10 minutes
+                  </p>
+                </div>
+              )}
+              {timeLeft === 0 && (
+                <div className="mt-2 text-center">
+                  <p className="text-sm font-semibold text-red-600">
+                    ⏰ OTP has expired! Please request a new one.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -162,18 +263,20 @@ function ForgotPassword() {
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-900 hover:to-black focus:ring-4 focus:ring-gray-300 font-semibold transition duration-200 transform hover:scale-[1.02] shadow-lg"
+                disabled={loading || timeLeft === 0}
+                className="flex-1 bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-900 hover:to-black focus:ring-4 focus:ring-gray-300 font-semibold transition duration-200 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Verify OTP
+                {loading ? 'Verifying...' : 'Verify OTP'}
               </button>
             </div>
 
             <button
               type="button"
               onClick={handleEmailSubmit}
-              className="w-full text-sm text-gray-600 hover:text-gray-800 font-medium transition"
+              disabled={loading || timeLeft > 0}
+              className="w-full text-sm text-gray-600 hover:text-gray-800 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Resend OTP
+              {timeLeft > 0 ? `Resend OTP (${formatTime(timeLeft)})` : 'Resend OTP'}
             </button>
           </form>
         )}
@@ -227,9 +330,10 @@ function ForgotPassword() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-900 hover:to-black focus:ring-4 focus:ring-gray-300 font-semibold transition duration-200 transform hover:scale-[1.02] shadow-lg"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-900 hover:to-black focus:ring-4 focus:ring-gray-300 font-semibold transition duration-200 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Reset Password
+              {loading ? 'Resetting...' : 'Reset Password'}
             </button>
           </form>
         )}

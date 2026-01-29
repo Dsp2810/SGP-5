@@ -40,7 +40,7 @@ function Register() {
         },
         body: JSON.stringify({
           name: formData.name,
-          email: formData.email,
+          email: formData.email.toLowerCase().trim(),
           password: formData.password
         })
       });
