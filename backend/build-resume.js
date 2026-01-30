@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, UnderlineType, BorderStyle } = require('docx');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, UnderlineType, BorderStyle, ExternalHyperlink, TabStopType, TabStopPosition, convertInchesToTwip } = require('docx');
 const { generateLatexResume } = require('./src/templates/resume.template');
 
 // Create readline interface
@@ -19,7 +19,7 @@ const resumeData = {
     location: 'Gujarat, India',
     linkedin: 'https://www.linkedin.com/in/pateldhavals-',
     github: 'https://github.com/Dsp2810',
-    website: '' // Add portfolio if you have one
+    wclsebsite: '' // Add portfolio if you have one
   },
 
   education: [
@@ -99,72 +99,115 @@ const resumeData = {
   ]
 };
 
-// Helper function to create section heading
+// Professional color scheme
+const COLORS = {
+  primary: '212529',      // Dark gray for headers
+  secondary: '555555',    // Gray for dates
+  link: '0066CC',         // Blue for links
+  text: '333333'          // Dark text
+};
+
+// Helper function to create professional section heading
 const createSectionHeading = (text) => {
   return new Paragraph({
-    text: text,
-    heading: HeadingLevel.HEADING_1,
-    spacing: { before: 240, after: 120 },
+    children: [
+      new TextRun({
+        text: text,
+        bold: true,
+        size: 24,
+        color: COLORS.primary,
+        allCaps: true
+      })
+    ],
+    spacing: { before: 200, after: 80 },
     border: {
       bottom: {
-        color: "000000",
+        color: COLORS.primary,
         space: 1,
         style: BorderStyle.SINGLE,
-        size: 6
+        size: 8
       }
     }
   });
 };
 
-// Generate DOCX document
-const createResume = () => {
+// Generate DOCX document with professional formatting
+const createResume = (data) => {
   const sections = [];
 
-  // Header - Name
+  // Header - Name (larger, bold, centered)
   sections.push(
     new Paragraph({
       children: [
         new TextRun({
-          text: resumeData.personalInfo.name,
+          text: data.personalInfo.name,
           bold: true,
-          size: 32
+          size: 40,
+          color: COLORS.primary
         })
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { after: 80 }
+      spacing: { after: 100 }
     })
   );
 
-  // Contact Information & Social Links (Combined in one line)
+  // Contact Information & Social Links (Combined with dot separators)
   const contactChildren = [];
   
   // Add email
-  if (resumeData.personalInfo.email) {
-    contactChildren.push(new TextRun({ text: resumeData.personalInfo.email, size: 20 }));
+  if (data.personalInfo.email) {
+    contactChildren.push(new TextRun({ text: data.personalInfo.email, size: 20, color: COLORS.text }));
   }
   
   // Add phone
-  if (resumeData.personalInfo.phone) {
-    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: ' | ', size: 20 }));
-    contactChildren.push(new TextRun({ text: resumeData.personalInfo.phone, size: 20 }));
+  if (data.personalInfo.phone) {
+    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: '  •  ', size: 20, color: COLORS.secondary }));
+    contactChildren.push(new TextRun({ text: data.personalInfo.phone, size: 20, color: COLORS.text }));
   }
   
   // Add location
-  if (resumeData.personalInfo.location) {
-    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: ' | ', size: 20 }));
-    contactChildren.push(new TextRun({ text: resumeData.personalInfo.location, size: 20 }));
+  if (data.personalInfo.location) {
+    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: '  •  ', size: 20, color: COLORS.secondary }));
+    contactChildren.push(new TextRun({ text: data.personalInfo.location, size: 20, color: COLORS.text }));
   }
   
-  // Add LinkedIn
-  if (resumeData.personalInfo.linkedin) {
-    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: ' | ', size: 20 }));
-    contactChildren.push(new TextRun({ text: 'LinkedIn', size: 20, color: '0000FF', underline: {} }));
+  // Add LinkedIn with hyperlink
+  if (data.personalInfo.linkedin) {
+    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: '  •  ', size: 20, color: COLORS.secondary }));
+    contactChildren.push(
+      new ExternalHyperlink({
+        children: [
+          new TextRun({ text: 'LinkedIn', size: 20, color: COLORS.link, underline: { type: UnderlineType.SINGLE } })
+        ],
+        link: data.personalInfo.linkedin
+      })
+    );
   }
   
-  // Add GitHub
-  if (resumeData.personalInfo.github) {
-    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: ' | ', size: 20 }));
-    contactChildren.push(new TextRun({ text: 'GitHub', size: 20, color: '0000FF', underline: {} }));
+  // Add GitHub with hyperlink
+  if (data.personalInfo.github) {
+    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: '  •  ', size: 20, color: COLORS.secondary }));
+    contactChildren.push(
+      new ExternalHyperlink({
+        children: [
+          new TextRun({ text: 'GitHub', size: 20, color: COLORS.link, underline: { type: UnderlineType.SINGLE } })
+        ],
+        link: data.personalInfo.github
+      })
+    );
+  }
+
+  // Add Portfolio/Website with hyperlink
+  if (data.personalInfo.website) {
+    if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: '  •  ', size: 20, color: COLORS.secondary }));
+    contactChildren.push(
+      new ExternalHyperlink({
+        children: [
+          new TextRun({ text: 'Portfolio', size: 20, color: COLORS.link, underline: { type: UnderlineType.SINGLE } })
+        ],
+        link: data.personalInfo.website
+      })
+    );
   }
 
   sections.push(
@@ -176,136 +219,200 @@ const createResume = () => {
   );
 
   // EDUCATION Section
-  sections.push(createSectionHeading('EDUCATION'));
+  sections.push(createSectionHeading('Education'));
   
-  resumeData.education.forEach(edu => {
+  data.education.forEach(edu => {
+    // Degree with date on right
     sections.push(
       new Paragraph({
         children: [
           new TextRun({
             text: edu.degree + (edu.specialization ? ` in ${edu.specialization}` : ''),
             bold: true,
-            size: 22
-          }),
-          new TextRun({
-            text: `\t\t${edu.endDate}`,
-            size: 22
+            size: 22,
+            color: COLORS.primary
           })
         ],
-        spacing: { after: 50 }
+        tabStops: [{ type: TabStopType.RIGHT, position: convertInchesToTwip(7.5) }],
+        spacing: { after: 40 }
       })
     );
     
+    // Institution with CGPA
     sections.push(
       new Paragraph({
         children: [
           new TextRun({
             text: edu.institution,
             italics: true,
-            size: 22
+            size: 22,
+            color: COLORS.text
           }),
-          ...(edu.cgpa ? [new TextRun({
-            text: `\t\tCGPA: ${edu.cgpa}`,
-            italics: true,
-            size: 22
-          })] : [])
+          new TextRun({ text: '\t' }),
+          new TextRun({
+            text: edu.endDate,
+            size: 22,
+            color: COLORS.secondary
+          }),
+          ...(edu.cgpa ? [
+            new TextRun({ text: '  |  ', size: 22, color: COLORS.secondary }),
+            new TextRun({
+              text: `CGPA: ${edu.cgpa}`,
+              italics: true,
+              size: 22,
+              color: COLORS.text
+            })
+          ] : [])
         ],
+        tabStops: [{ type: TabStopType.RIGHT, position: convertInchesToTwip(7.5) }],
         spacing: { after: 100 }
       })
     );
+
+    if (edu.details) {
+      sections.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: edu.details, size: 20, color: COLORS.text })
+          ],
+          spacing: { after: 100 }
+        })
+      );
+    }
   });
 
   // EXPERIENCE Section
-  if (resumeData.experience && resumeData.experience.length > 0) {
-    sections.push(createSectionHeading('EXPERIENCE'));
+  if (data.experience && data.experience.length > 0) {
+    sections.push(createSectionHeading('Experience'));
     
-    resumeData.experience.forEach(exp => {
+    data.experience.forEach(exp => {
+      // Position with date on right
       sections.push(
         new Paragraph({
           children: [
             new TextRun({
               text: exp.position,
               bold: true,
-              size: 22
+              size: 22,
+              color: COLORS.primary
             }),
+            new TextRun({ text: '\t' }),
             new TextRun({
-              text: `\t\t${exp.startDate} -- ${exp.endDate}`,
-              size: 22
+              text: `${exp.startDate} – ${exp.endDate}`,
+              size: 22,
+              color: COLORS.secondary
             })
           ],
-          spacing: { after: 50 }
+          tabStops: [{ type: TabStopType.RIGHT, position: convertInchesToTwip(7.5) }],
+          spacing: { after: 40 }
         })
       );
       
+      // Company with location
       sections.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: exp.company + (exp.location ? ` | ${exp.location}` : ''),
+              text: exp.company,
               italics: true,
-              size: 22
-            })
+              size: 22,
+              color: COLORS.text
+            }),
+            ...(exp.location ? [
+              new TextRun({ text: '  •  ', size: 22, color: COLORS.secondary }),
+              new TextRun({
+                text: exp.location,
+                size: 22,
+                color: COLORS.text
+              })
+            ] : [])
           ],
-          spacing: { after: 100 }
+          spacing: { after: 80 }
         })
       );
       
+      // Responsibilities as bullet points
       exp.responsibilities.forEach(resp => {
         sections.push(
           new Paragraph({
-            text: resp,
+            children: [
+              new TextRun({ text: resp, size: 21, color: COLORS.text })
+            ],
             bullet: { level: 0 },
-            size: 22,
-            spacing: { after: 50 }
+            spacing: { after: 40 }
           })
         );
       });
       
-      sections.push(new Paragraph({ text: '', spacing: { after: 100 } }));
+      sections.push(new Paragraph({ text: '', spacing: { after: 80 } }));
     });
   }
 
   // PROJECTS Section
-  if (resumeData.projects && resumeData.projects.length > 0) {
-    sections.push(createSectionHeading('PROJECTS'));
+  if (data.projects && data.projects.length > 0) {
+    sections.push(createSectionHeading('Projects'));
     
-    resumeData.projects.forEach(proj => {
+    data.projects.forEach(proj => {
+      // Project title with link
+      const projChildren = [
+        new TextRun({
+          text: proj.title,
+          bold: true,
+          size: 22,
+          color: COLORS.primary
+        })
+      ];
+      
+      if (proj.link) {
+        projChildren.push(new TextRun({ text: '\t' }));
+        projChildren.push(
+          new ExternalHyperlink({
+            children: [
+              new TextRun({ text: '[View Project]', size: 20, color: COLORS.link, underline: { type: UnderlineType.SINGLE } })
+            ],
+            link: proj.link
+          })
+        );
+      }
+      
+      sections.push(
+        new Paragraph({
+          children: projChildren,
+          tabStops: [{ type: TabStopType.RIGHT, position: convertInchesToTwip(7.5) }],
+          spacing: { after: 40 }
+        })
+      );
+      
+      // Description
       sections.push(
         new Paragraph({
           children: [
-            new TextRun({
-              text: proj.title,
-              bold: true,
-              size: 22
-            }),
-            ...(proj.link ? [new TextRun({
-              text: `\t\t[GitHub]`,
-              size: 20
-            })] : [])
+            new TextRun({ text: proj.description, size: 21, color: COLORS.text })
           ],
-          spacing: { after: 50 }
+          spacing: { after: 40 }
         })
       );
       
-      sections.push(
-        new Paragraph({
-          text: proj.description,
-          size: 22,
-          spacing: { after: 50 }
-        })
-      );
-      
+      // Technologies
       if (proj.technologies && proj.technologies.length > 0) {
         sections.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: 'Tech: ' + proj.technologies.join(', '),
+                text: 'Technologies: ',
+                bold: true,
                 italics: true,
-                size: 20
+                size: 20,
+                color: COLORS.secondary
+              }),
+              new TextRun({
+                text: proj.technologies.join(', '),
+                italics: true,
+                size: 20,
+                color: COLORS.text
               })
             ],
-            spacing: { after: 150 }
+            spacing: { after: 120 }
           })
         );
       }
@@ -313,9 +420,9 @@ const createResume = () => {
   }
 
   // TECHNICAL SKILLS Section
-  sections.push(createSectionHeading('TECHNICAL SKILLS'));
+  sections.push(createSectionHeading('Technical Skills'));
   
-  Object.entries(resumeData.skills).forEach(([category, skillList]) => {
+  Object.entries(data.skills).forEach(([category, skillList]) => {
     const skillsStr = Array.isArray(skillList) ? skillList.join(', ') : skillList;
     sections.push(
       new Paragraph({
@@ -323,56 +430,70 @@ const createResume = () => {
           new TextRun({
             text: `${category}: `,
             bold: true,
-            size: 22
+            size: 22,
+            color: COLORS.primary
           }),
           new TextRun({
             text: skillsStr,
-            size: 22
+            size: 22,
+            color: COLORS.text
           })
         ],
-        spacing: { after: 100 }
+        spacing: { after: 60 }
       })
     );
   });
 
   // CERTIFICATIONS Section
-  if (resumeData.certifications && resumeData.certifications.length > 0) {
-    sections.push(createSectionHeading('CERTIFICATIONS'));
+  if (data.certifications && data.certifications.length > 0) {
+    sections.push(createSectionHeading('Certifications'));
     
-    resumeData.certifications.forEach(cert => {
+    data.certifications.forEach(cert => {
       sections.push(
         new Paragraph({
           children: [
             new TextRun({
               text: cert.name,
               bold: true,
-              size: 22
+              size: 22,
+              color: COLORS.primary
             }),
-            ...(cert.issuer ? [new TextRun({
-              text: ` -- ${cert.issuer}`,
-              size: 22
-            })] : []),
-            ...(cert.date ? [new TextRun({
-              text: `\t\t${cert.date}`,
-              size: 22
-            })] : [])
+            ...(cert.issuer ? [
+              new TextRun({ text: ' – ', size: 22, color: COLORS.secondary }),
+              new TextRun({
+                text: cert.issuer,
+                italics: true,
+                size: 22,
+                color: COLORS.text
+              })
+            ] : []),
+            ...(cert.date ? [
+              new TextRun({ text: '\t' }),
+              new TextRun({
+                text: cert.date,
+                size: 22,
+                color: COLORS.secondary
+              })
+            ] : [])
           ],
-          spacing: { after: 100 }
+          tabStops: [{ type: TabStopType.RIGHT, position: convertInchesToTwip(7.5) }],
+          spacing: { after: 60 }
         })
       );
     });
   }
 
   // ACHIEVEMENTS Section
-  if (resumeData.achievements && resumeData.achievements.length > 0) {
-    sections.push(createSectionHeading('ACHIEVEMENTS & AWARDS'));
+  if (data.achievements && data.achievements.length > 0) {
+    sections.push(createSectionHeading('Achievements & Awards'));
     
-    resumeData.achievements.forEach(ach => {
+    data.achievements.forEach(ach => {
       sections.push(
         new Paragraph({
-          text: ach,
+          children: [
+            new TextRun({ text: ach, size: 21, color: COLORS.text })
+          ],
           bullet: { level: 0 },
-          size: 22,
           spacing: { after: 50 }
         })
       );
@@ -381,14 +502,23 @@ const createResume = () => {
 
   return new Document({
     sections: [{
-      properties: {},
+      properties: {
+        page: {
+          margin: {
+            top: convertInchesToTwip(0.5),
+            right: convertInchesToTwip(0.6),
+            bottom: convertInchesToTwip(0.5),
+            left: convertInchesToTwip(0.6)
+          }
+        }
+      },
       children: sections
     }]
   });
 };
 
-// Generate DOCX file
-const doc = createResume();
+// Generate DOCX file with resume data
+const doc = createResume(resumeData);
 
 // Create output directory if it doesn't exist
 const outputDir = path.join(__dirname, 'generated');

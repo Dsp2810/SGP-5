@@ -22,7 +22,20 @@ const generateLatexResume = (data) => {
     personalInfo.location
   ].filter(Boolean);
   
-  const contactLine = contactParts.join(' | ');
+  const contactLine = contactParts.join(' $\\cdot$ ');
+
+  // Build social links line with proper hyperlinks
+  const socialLinks = [];
+  if (personalInfo.linkedin) {
+    socialLinks.push(`\\href{${personalInfo.linkedin}}{\\textcolor{linkblue}{LinkedIn}}`);
+  }
+  if (personalInfo.github) {
+    socialLinks.push(`\\href{${personalInfo.github}}{\\textcolor{linkblue}{GitHub}}`);
+  }
+  if (personalInfo.website) {
+    socialLinks.push(`\\href{${personalInfo.website}}{\\textcolor{linkblue}{Portfolio}}`);
+  }
+  const socialLine = socialLinks.length > 0 ? ` $\\cdot$ ${socialLinks.join(' $\\cdot$ ')}` : '';
 
   return `\\documentclass[a4paper,11pt]{article}
 \\usepackage[utf8]{inputenc}
@@ -33,107 +46,109 @@ const generateLatexResume = (data) => {
 \\usepackage{xcolor}
 \\usepackage{fancyhdr}
 \\usepackage{ragged2e}
+\\usepackage{tabularx}
+\\usepackage{fontawesome5}
 
 % Page setup
-\\geometry{left=0.7in,right=0.7in,top=0.5in,bottom=0.5in}
-\\setlist{nosep, leftmargin=20pt}
+\\geometry{left=0.6in,right=0.6in,top=0.5in,bottom=0.5in}
+\\setlist{nosep, leftmargin=18pt}
 \\pagestyle{empty}
+
+% Define colors
+\\definecolor{headercolor}{RGB}{33, 37, 41}
+\\definecolor{sectioncolor}{RGB}{33, 37, 41}
+\\definecolor{linkblue}{RGB}{0, 102, 204}
+\\definecolor{datecolor}{RGB}{85, 85, 85}
 
 % Hyperlink setup (ATS-friendly)
 \\hypersetup{
     colorlinks=true,
-    linkcolor=black,
-    urlcolor=black,
-    pdfborder={0 0 0}
+    linkcolor=linkblue,
+    urlcolor=linkblue,
+    filecolor=linkblue,
+    pdfborder={0 0 0},
+    pdfnewwindow=true
 }
 
 % Section formatting - Clean and Professional
 \\titleformat{\\section}
-    {\\vspace{-3pt}\\fontsize{12pt}{12pt}\\bfseries}
+    {\\vspace{-4pt}\\color{sectioncolor}\\fontsize{11pt}{11pt}\\bfseries\\scshape}
     {}
     {0pt}
     {}
-    [\\vspace{-8pt}\\hrule\\vspace{4pt}]
+    [\\vspace{-6pt}\\textcolor{sectioncolor}{\\hrule height 0.8pt}\\vspace{4pt}]
 
-\\titlespacing{\\section}{0pt}{8pt}{4pt}
+\\titlespacing{\\section}{0pt}{10pt}{6pt}
 
 % Use justified text
 \\justifying
 
 \\begin{document}
 
-% Header - Compact 2-line format
+% Header - Professional 2-line format
 \\begin{center}
-{\\fontsize{16pt}{16pt}\\selectfont\\bfseries ${personalInfo.name}}\\\\[3pt]
-{\\small ${contactLine}}
+{\\fontsize{20pt}{20pt}\\selectfont\\textcolor{headercolor}{\\textbf{${personalInfo.name}}}}\\\\[6pt]
+{\\small ${contactLine}${socialLine}}
 \\end{center}
 
-\\vspace{6pt}
+\\vspace{8pt}
 
 % Education Section
-\\section*{EDUCATION}
+\\section*{Education}
 ${education.map(edu => {
-  let eduLine = `\\textbf{${edu.degree}}`;
-  if (edu.specialization) {
-    eduLine += ` in ${edu.specialization}`;
-  }
-  eduLine += ` \\hfill ${edu.endDate}`;
-  let result = eduLine + `\\\\\n${edu.institution}`;
-  if (edu.cgpa) {
-    result += ` \\hfill \\textit{CGPA: ${edu.cgpa}}`;
-  }
+  let result = `\\noindent\\textbf{${edu.degree}${edu.specialization ? ` in ${edu.specialization}` : ''}} \\hfill \\textcolor{datecolor}{${edu.endDate}}\\\\
+${edu.institution}${edu.cgpa ? ` \\hfill \\textit{CGPA: ${edu.cgpa}}` : ''}`;
   if (edu.details) {
-    result += `\\\\\n\\small ${edu.details}`;
+    result += `\\\\
+\\small{${edu.details}}`;
   }
-  result += `\\\\\n`;
   return result;
-}).join('\n')}
+}).join('\\\\[8pt]\n')}
 
-${experience && experience.length > 0 ? `% Professional Experience
-\\section*{EXPERIENCE}
-${experience.map(exp => `\\textbf{${exp.position}} \\hfill ${exp.startDate} -- ${exp.endDate}\\\\
-\\textit{${exp.company}}${exp.location ? ` | ${exp.location}` : ''}\\\\\n\\vspace{2pt}
-\\begin{itemize}[topsep=0pt, itemsep=2pt]
+${experience && experience.length > 0 ? `\\vspace{4pt}
+% Professional Experience
+\\section*{Experience}
+${experience.map(exp => `\\noindent\\textbf{${exp.position}} \\hfill \\textcolor{datecolor}{${exp.startDate} -- ${exp.endDate}}\\\\
+\\textit{${exp.company}}${exp.location ? ` $\\cdot$ ${exp.location}` : ''}
+\\begin{itemize}[topsep=4pt, itemsep=2pt, parsep=0pt]
 ${exp.responsibilities.map(resp => `  \\item ${resp}`).join('\n')}
-\\end{itemize}
-\\vspace{4pt}`).join('\n\n')}
-
+\\end{itemize}`).join('\\vspace{6pt}\n\n')}
 ` : ''}
 
-% Projects Section
-${projects && projects.length > 0 ? `\\section*{PROJECTS}
+${projects && projects.length > 0 ? `% Projects Section
+\\section*{Projects}
 ${projects.map(proj => {
-  let projLine = `\\textbf{${proj.title}}`;
+  let projLine = `\\noindent\\textbf{${proj.title}}`;
   if (proj.link) {
-    projLine += ` \\hfill \\href{${proj.link}}{[GitHub]}`;
+    projLine += ` \\hfill \\href{${proj.link}}{\\textcolor{linkblue}{\\small [View Project]}}`;
   }
-  projLine += `\\\\\n${proj.description}`;
+  projLine += `\\\\
+${proj.description}`;
   if (proj.technologies && proj.technologies.length > 0) {
-    projLine += `\\\\\n\\textit{Tech: ${proj.technologies.join(', ')}}`;
+    projLine += `\\\\
+\\textit{\\small Technologies: ${proj.technologies.join(', ')}}`;
   }
-  projLine += `\\\\\n`;
   return projLine;
-}).join('\n')}
-
+}).join('\\\\[8pt]\n')}
 ` : ''}
 
 % Technical Skills Section
-\\section*{TECHNICAL SKILLS}
+\\section*{Technical Skills}
+\\begin{tabularx}{\\textwidth}{@{}l X@{}}
 ${Object.entries(skills).map(([category, skillList]) => {
   const skillsStr = Array.isArray(skillList) ? skillList.join(', ') : skillList;
-  return `\\textbf{${category}:} ${skillsStr}`;
-}).join('\\\\\n')}
+  return `\\textbf{${category}:} & ${skillsStr}`;
+}).join(' \\\\\n')}
+\\end{tabularx}
 
-${certifications && certifications.length > 0 ? `\\section*{CERTIFICATIONS}
-${certifications.map(cert => `\\textbf{${cert.name}}${cert.issuer ? ` -- ${cert.issuer}` : ''}${cert.date ? ` \\hfill ${cert.date}` : ''}`).join('\\\\\n')}
-
+${certifications && certifications.length > 0 ? `\\section*{Certifications}
+${certifications.map(cert => `\\noindent\\textbf{${cert.name}}${cert.issuer ? ` -- \\textit{${cert.issuer}}` : ''}${cert.date ? ` \\hfill \\textcolor{datecolor}{${cert.date}}` : ''}`).join('\\\\\n')}
 ` : ''}
 
-${achievements && achievements.length > 0 ? `\\section*{ACHIEVEMENTS & AWARDS}
-\\begin{itemize}[topsep=0pt, itemsep=2pt]
+${achievements && achievements.length > 0 ? `\\section*{Achievements \\& Awards}
+\\begin{itemize}[topsep=2pt, itemsep=3pt, parsep=0pt]
 ${achievements.map(ach => `  \\item ${ach}`).join('\n')}
 \\end{itemize}
-
 ` : ''}
 
 \\end{document}`;
