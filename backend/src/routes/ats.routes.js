@@ -9,7 +9,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 10 * 1024 * 1024 // 10MB limit
   },
   fileFilter: (req, file, cb) => {
     // Accept only PDF and DOCX files
@@ -28,13 +28,8 @@ const upload = multer({
 });
 
 // @route   POST /api/ats/analyze
-// @desc    Analyze resume with ATS scoring
+// @desc    Analyze resume with ATS scoring using Sentence Transformers
 // @access  Private
 router.post('/analyze', protect, upload.single('resume'), atsController.analyzeResume);
-
-// @route   GET /api/ats/health
-// @desc    Check ATS service status
-// @access  Private
-router.get('/health', protect, atsController.checkATSService);
 
 module.exports = router;

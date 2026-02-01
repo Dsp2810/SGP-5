@@ -1,8 +1,6 @@
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const util = require('util');
-const execPromise = util.promisify(exec);
 const path = require('path');
-const fs = require('fs').promises;
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 
@@ -50,7 +48,7 @@ const extractTextFromFile = async (file) => {
 };
 
 /**
- * Analyze resume using Python ATS scorer
+ * Analyze resume using Python ATS scorer with Sentence Transformers
  */
 exports.analyzeResume = async (req, res) => {
   try {
@@ -72,74 +70,71 @@ exports.analyzeResume = async (req, res) => {
       });
     }
 
-    // Get job description from request body (optional)
+    // Get job description from request body (required)
     const jobDescription = req.body.jobDescription || '';
+    
+    if (!jobDescription.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Job description is required'
+      });
+    }
 
     // Path to Python script
     const pythonScript = path.join(__dirname, '../services/atsScorer.py');
     
-    // Use virtual environment Python if available, fallback to system Python
-    // Virtual environment is at project root, not backend folder
-    const venvPython = path.join(__dirname, '../../../.venv/Scripts/python.exe');
-    let pythonCommand = 'python';
+    console.log('Executing ATS analysis with Sentence Transformers...');
     
-    try {
-      await fs.access(venvPython);
-      pythonCommand = venvPython;
-      console.log('Using virtual environment Python:', venvPython);
-    } catch (error) {
-      console.log('Virtual environment not found, using system Python');
-    }
-
-    // Check if Python script exists
-    try {
-      await fs.access(pythonScript);
-      console.log('Python script found:', pythonScript);
-    } catch (error) {
-      console.error('Python script not found:', pythonScript);
+    // Use spawn instead of exec for better handling
+    const { spawn } = require('child_process');
+    
+    // Use full Python path to ensure correct environment
+    const pythonPath = 'C:\\Users\\HP\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe';
+    
+    const python = spawn(pythonPath, [pythonScript, resumeText, jobDescription], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true
+    });
+    
+    let stdout = '';
+    let stderr = '';
+    
+    python.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    // Wait for Python process to complete
+    await new Promise((resolve, reject) => {
+      python.on('close', (code) => {
+        if (code !== 0) {
+          console.error('Python stderr:', stderr);
+          reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+        } else {
+          resolve();
+        }
+      });
+      
+      python.on('error', (error) => {
+        console.error('Failed to start Python:', error);
+        reject(new Error('Failed to execute ATS analysis. Make sure Python and sentence-transformers are installed.'));
+      });
+      
+      // Set timeout
+      setTimeout(() => {
+        python.kill();
+        reject(new Error('ATS analysis timeout'));
+      }, 60000);
+    }).catch((error) => {
       return res.status(500).json({
         success: false,
-        message: 'ATS scorer service not found'
+        message: error.message || 'Failed to execute ATS analysis',
+        error: stderr || error.toString()
       });
-    }
-
-    // Escape arguments for shell
-    const escapeArg = (arg) => {
-      return arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-    };
-
-    // Execute Python script
-    const command = `"${pythonCommand}" "${pythonScript}" "${escapeArg(resumeText)}" "${escapeArg(jobDescription)}"`;
-    
-    console.log('Executing ATS analysis...');
-    console.log('Python command:', pythonCommand);
-    console.log('Resume text length:', resumeText.length, 'characters');
-    console.log('Job description length:', jobDescription.length, 'characters');
-    
-    let stdout, stderr;
-    try {
-      const result = await execPromise(command, {
-        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-        timeout: 30000 // 30 second timeout
-      });
-      stdout = result.stdout;
-      stderr = result.stderr;
-    } catch (execError) {
-      console.error('Python execution error:', execError);
-      console.error('Command:', command);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to execute ATS analysis',
-        error: execError.message,
-        details: execError.stderr || execError.stdout
-      });
-    }
-
-    if (stderr && !stderr.includes('UserWarning')) {
-      console.error('Python stderr:', stderr);
-    }
-
-    console.log('Python stdout:', stdout.substring(0, 500)); // Log first 500 chars
+    });
 
     // Parse Python output
     let result;
@@ -150,8 +145,7 @@ exports.analyzeResume = async (req, res) => {
       return res.status(500).json({
         success: false,
         message: 'Failed to parse ATS analysis results',
-        error: parseError.message,
-        output: stdout.substring(0, 500)
+        error: parseError.message
       });
     }
 
@@ -164,7 +158,7 @@ exports.analyzeResume = async (req, res) => {
       });
     }
 
-    console.log('ATS analysis completed successfully. Score:', result.overallScore);
+    console.log('ATS analysis completed successfully. Score:', result.score);
 
     // Return results
     return res.status(200).json({
@@ -179,39 +173,6 @@ exports.analyzeResume = async (req, res) => {
       success: false,
       message: 'Failed to analyze resume',
       error: error.message
-    });
-  }
-};
-
-/**
- * Health check for ATS service
- */
-exports.checkATSService = async (req, res) => {
-  try {
-    const pythonScript = path.join(__dirname, '../services/atsScorer.py');
-    
-    // Check if Python script exists
-    await fs.access(pythonScript);
-
-    // Try to execute Python with version check
-    const { stdout } = await execPromise('python --version');
-    
-    return res.status(200).json({
-      success: true,
-      message: 'ATS service is available',
-      pythonVersion: stdout.trim(),
-      scriptPath: pythonScript
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'ATS service is not available',
-      error: error.message,
-      instructions: [
-        'Install Python: https://www.python.org/downloads/',
-        'Install dependencies: pip install -r requirements.txt',
-        'Download spaCy model: python -m spacy download en_core_web_sm'
-      ]
     });
   }
 };
