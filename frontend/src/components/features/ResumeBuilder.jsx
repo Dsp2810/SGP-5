@@ -12,7 +12,8 @@ function ResumeBuilder() {
       phone: '',
       location: '',
       linkedin: '',
-      github: ''
+      github: '',
+      website: ''
     },
     education: [
       {
@@ -485,6 +486,16 @@ function ResumeBuilder() {
                   onChange={(e) => handlePersonalInfoChange('github', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                   placeholder="https://github.com/username"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                <input
+                  type="url"
+                  value={resumeData.personalInfo.website}
+                  onChange={(e) => handlePersonalInfoChange('website', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  placeholder="https://yourwebsite.com"
                 />
               </div>
             </div>
