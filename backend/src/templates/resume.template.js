@@ -1,4 +1,5 @@
 /**
+
  * Professional LaTeX Resume Template Generator
  * Generates trendy, ATS-friendly resumes with modern formatting
  * Based on professional resume styling

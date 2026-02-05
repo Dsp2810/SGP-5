@@ -13,19 +13,18 @@ import {
 } from '../templates';
 
 function PortfolioGenerator() {
-  // Step tracking: 1=AllDataSources, 2=Review, 3=Template, 4=Final
+  // Step tracking: 1=UploadResume, 2=Review, 3=Template, 4=Deploy
   const [currentStep, setCurrentStep] = useState(1);
   
   // Data sources
-  const [linkedInUrl, setLinkedInUrl] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
-  const [linkedInFetched, setLinkedInFetched] = useState(false);
   const [resumeParsed, setResumeParsed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loadingType, setLoadingType] = useState(''); // 'linkedin' or 'resume'
   const [validationError, setValidationError] = useState('');
+  const [portfolioLink, setPortfolioLink] = useState('');
+  const [deployError, setDeployError] = useState('');
   
-  // Portfolio data (merged from all sources)
+  // Portfolio data (extracted from resume + manual input)
   const [portfolioData, setPortfolioData] = useState({
     name: '',
     title: '',
@@ -33,127 +32,110 @@ function PortfolioGenerator() {
     phone: '',
     location: '',
     about: '',
-    linkedin: '',
     github: '',
+    linkedin: '',
+    portfolio: '',
     profilePhoto: '',
     experience: [],
     education: [],
     skills: [],
-    projects: []
+    projects: [],
+    certifications: [],
+    achievements: [],
+    languages: []
   });
 
   // Selected template
   const [selectedTemplate, setSelectedTemplate] = useState('template1');
 
-  // STEP 1: LinkedIn Import
-  const handleLinkedInImport = (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setLoadingType('linkedin');
-    
-    // Simulate API call to fetch LinkedIn data
-    setTimeout(() => {
-      const mockLinkedInData = {
-        name: 'John Doe',
-        title: 'Full Stack Developer',
-        email: 'john.doe@email.com',
-        phone: '+1 234 567 890',
-        location: 'San Francisco, CA',
-        about: 'Passionate full-stack developer with 5+ years of experience in building scalable web applications. Expertise in React, Node.js, and cloud technologies.',
-        linkedin: linkedInUrl,
-        github: 'https://github.com/johndoe',
-        profilePhoto: '',
-        experience: [
-          {
-            company: 'Tech Corp',
-            position: 'Senior Developer',
-            duration: '2021 - Present',
-            description: 'Led development of enterprise applications serving 100K+ users'
-          },
-          {
-            company: 'StartupXYZ',
-            position: 'Full Stack Developer',
-            duration: '2019 - 2021',
-            description: 'Built and maintained multiple client projects using modern web technologies'
-          }
-        ],
-        education: [
-          {
-            degree: 'Bachelor of Science in Computer Science',
-            institution: 'University of California',
-            year: '2019'
-          }
-        ],
-        skills: ['React', 'Node.js', 'Python', 'AWS', 'MongoDB', 'Docker', 'TypeScript', 'GraphQL'],
-        projects: []
-      };
-      
-      // Merge with existing data
-      setPortfolioData(prev => ({
-        ...prev,
-        ...mockLinkedInData,
-        // Preserve manually entered projects if any
-        projects: prev.projects.length > 0 ? prev.projects : mockLinkedInData.projects
-      }));
-      setLinkedInFetched(true);
-      setLoading(false);
-      setLoadingType('');
-    }, 2000);
-  };
-
-  // STEP 1: Resume Upload (Optional)
-  const handleResumeUpload = (e) => {
+  // STEP 1: Resume Upload with extraction
+  const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setResumeFile(file);
-      setLoading(true);
-      setLoadingType('resume');
-      
-      // Simulate API call to parse resume
-      setTimeout(() => {
-        const mockResumeData = {
-          phone: portfolioData.phone || '+1 555-123-4567',
-          location: portfolioData.location || 'New York, NY',
-          about: portfolioData.about || 'Experienced software engineer specializing in full-stack web development.',
-          github: portfolioData.github || 'https://github.com/janesmith',
-          skills: [...new Set([...portfolioData.skills, 'JavaScript', 'React', 'Python', 'Django', 'PostgreSQL'])],
-          projects: [
-            ...portfolioData.projects,
-            {
-              name: 'E-commerce Platform',
-              description: 'Built a full-featured e-commerce platform with payment integration',
-              technologies: ['React', 'Node.js', 'MongoDB'],
-              link: ''
-            }
-          ]
-        };
-        
-        // Merge resume data with existing data (don't override LinkedIn data)
+    if (!file) return;
+
+    // Validate file type (PDF and DOCX only)
+    const validTypes = [
+      'application/pdf', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+      'application/msword'
+    ];
+    if (!validTypes.includes(file.type)) {
+      setValidationError('Please upload a PDF or DOCX file');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      setValidationError('File size must be less than 10MB');
+      return;
+    }
+
+    setResumeFile(file);
+    setLoading(true);
+    setValidationError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/portfolio/parse-resume', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Merge extracted data, keeping empty fields for manual input
         setPortfolioData(prev => ({
           ...prev,
-          ...mockResumeData,
-          // Keep name, title, email from LinkedIn if already filled
-          name: prev.name || mockResumeData.name,
-          title: prev.title || mockResumeData.title,
-          email: prev.email || mockResumeData.email,
+          name: result.data.name || '',
+          email: result.data.email || '',
+          phone: result.data.phone || '',
+          location: result.data.location || '',
+          title: result.data.title || '',
+          about: result.data.about || '',
+          github: result.data.github || '',
+          linkedin: result.data.linkedin || '',
+          portfolio: result.data.portfolio || '',
+          experience: result.data.experience || [],
+          education: result.data.education || [],
+          skills: result.data.skills || [],
+          projects: result.data.projects || [],
+          certifications: result.data.certifications || [],
+          achievements: result.data.achievements || [],
+          languages: result.data.languages || []
         }));
         setResumeParsed(true);
-        setLoading(false);
-        setLoadingType('');
-      }, 2000);
+        
+        // Automatically move to review step after successful extraction
+        setTimeout(() => {
+          setCurrentStep(2);
+        }, 1000);
+      } else {
+        setValidationError(result.message || 'Failed to parse resume');
+      }
+    } catch (error) {
+      console.error('Resume upload error:', error);
+      setValidationError('Failed to process resume. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Continue to Review
   const handleContinueToReview = () => {
     if (!portfolioData.name || !portfolioData.title) {
-      setValidationError('Please provide at least your name and job title (from LinkedIn, Resume, or manually)');
-      // Scroll to top to show error
+      setValidationError('Please provide at least your name and job title (upload resume or enter manually)');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setValidationError('');
-    setCurrentStep(2); // Move to review
+    setCurrentStep(2);
   };
 
   // STEP 2: Update portfolio data in review
@@ -263,19 +245,119 @@ function PortfolioGenerator() {
     }));
   };
 
-  // STEP 3: Select template and generate
-  const handleGeneratePortfolio = () => {
+  // Certifications handlers
+  const handleAddCertification = () => {
+    setPortfolioData(prev => ({
+      ...prev,
+      certifications: [...prev.certifications, '']
+    }));
+  };
+
+  const handleRemoveCertification = (index) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      certifications: prev.certifications.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUpdateCertification = (index, value) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      certifications: prev.certifications.map((cert, i) => 
+        i === index ? value : cert
+      )
+    }));
+  };
+
+  // Achievements handlers
+  const handleAddAchievement = () => {
+    setPortfolioData(prev => ({
+      ...prev,
+      achievements: [...prev.achievements, '']
+    }));
+  };
+
+  const handleRemoveAchievement = (index) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      achievements: prev.achievements.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUpdateAchievement = (index, value) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      achievements: prev.achievements.map((ach, i) => 
+        i === index ? value : ach
+      )
+    }));
+  };
+
+  // Languages handlers
+  const handleAddLanguage = () => {
+    setPortfolioData(prev => ({
+      ...prev,
+      languages: [...prev.languages, '']
+    }));
+  };
+
+  const handleRemoveLanguage = (index) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      languages: prev.languages.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUpdateLanguage = (index, value) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      languages: prev.languages.map((lang, i) => 
+        i === index ? value : lang
+      )
+    }));
+  };
+
+  // STEP 3: Deploy portfolio and get link
+  const handleDeployPortfolio = async () => {
     setLoading(true);
-    setTimeout(() => {
+    setDeployError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/portfolio/deploy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          portfolioData,
+          template: selectedTemplate
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Portfolio URL now uses frontend route
+        const portfolioUrl = `http://localhost:5173/p/${result.portfolioId}`;
+        setPortfolioLink(portfolioUrl);
+        setCurrentStep(4);
+      } else {
+        setDeployError(result.message || 'Failed to deploy portfolio');
+      }
+    } catch (error) {
+      console.error('Deploy error:', error);
+      setDeployError('Failed to deploy portfolio. Please try again.');
+    } finally {
       setLoading(false);
-      setCurrentStep(4);
-    }, 1500);
+    }
   };
 
   // Render steps
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8 space-x-2">
-      {['Import Data', 'Review', 'Template', 'Done'].map((label, index) => (
+      {['Upload Resume', 'Review', 'Template', 'Deploy'].map((label, index) => (
         <div key={index} className="flex items-center">
           <div className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold ${
             currentStep > index + 1 ? 'bg-green-500 text-white' :
@@ -304,7 +386,7 @@ function PortfolioGenerator() {
 
       {renderStepIndicator()}
 
-      {/* STEP 1: All Data Sources in One Page */}
+      {/* STEP 1: Resume Upload Only */}
       {currentStep === 1 && (
         <div className="space-y-6">
           {/* Validation Error Message */}
@@ -313,7 +395,7 @@ function PortfolioGenerator() {
               <div className="flex items-start gap-3">
                 <div className="text-2xl">⚠️</div>
                 <div className="flex-1">
-                  <h3 className="text-red-800 font-semibold mb-1">Required Information Missing</h3>
+                  <h3 className="text-red-800 font-semibold mb-1">Error</h3>
                   <p className="text-red-700 text-sm">{validationError}</p>
                 </div>
                 <button
@@ -326,142 +408,186 @@ function PortfolioGenerator() {
             </div>
           )}
 
-          {/* LinkedIn Import Section */}
+          {/* Resume Upload Section */}
           <div className="bg-white rounded-xl shadow-md p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="text-4xl">🔗</div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">Import from LinkedIn</h2>
-                <p className="text-gray-600 text-sm">Fetch your professional data automatically</p>
-              </div>
-            </div>
-            <form onSubmit={handleLinkedInImport} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  LinkedIn Profile URL *
-                </label>
-                <input
-                  type="url"
-                  value={linkedInUrl}
-                  onChange={(e) => setLinkedInUrl(e.target.value)}
-                  placeholder="https://www.linkedin.com/in/your-username"
-                  required
-                  disabled={linkedInFetched}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading || linkedInFetched}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                {linkedInFetched ? (
-                  <span className="flex items-center justify-center gap-2">
-                    ✓ LinkedIn Data Imported
-                  </span>
-                ) : loading && loadingType === 'linkedin' ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Fetching Data...
-                  </span>
-                ) : (
-                  'Fetch LinkedIn Data'
-                )}
-              </button>
-            </form>
-          </div>
-
-          {/* Resume Upload Section - OPTIONAL */}
-          <div className="bg-white rounded-xl shadow-md p-8 relative">
-            <div className="absolute top-4 right-4">
-              <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
-                OPTIONAL
-              </span>
-            </div>
             <div className="flex items-center gap-3 mb-6">
               <div className="text-4xl">📄</div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">Upload Resume</h2>
-                <p className="text-gray-600 text-sm">Add more details from your resume (optional)</p>
+                <h2 className="text-2xl font-bold text-gray-800">Upload Your Resume</h2>
+                <p className="text-gray-600 text-sm">We'll extract portfolio details automatically from your resume</p>
               </div>
             </div>
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
-              <div className="text-5xl mb-4">📤</div>
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-400 transition-colors">
+              <div className="text-6xl mb-6">📤</div>
               <label className="cursor-pointer">
-                <span className="text-lg font-semibold text-gray-700">
+                <span className="text-xl font-semibold text-gray-700 block mb-2">
                   {resumeFile ? `✓ ${resumeFile.name}` : 'Choose a file or drag it here'}
                 </span>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx"
                   onChange={handleResumeUpload}
-                  disabled={loading || resumeParsed}
+                  disabled={loading}
                   className="hidden"
                 />
               </label>
               <p className="text-sm text-gray-500 mt-2">
-                Supports PDF, DOC, DOCX (Max 5MB)
+                Supports PDF, DOC, DOCX (Max 10MB)
               </p>
-              {loading && loadingType === 'resume' && (
-                <div className="mt-4">
-                  <div className="inline-block w-6 h-6 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="mt-2 text-gray-600">Parsing your resume...</p>
+              {loading && (
+                <div className="mt-6">
+                  <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="mt-3 text-gray-600 font-medium">
+                    Extracting portfolio details...
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">This may take a few seconds</p>
                 </div>
               )}
-              {resumeParsed && (
-                <div className="mt-4 text-green-600 font-semibold">
-                  ✓ Resume data merged successfully!
+              {resumeParsed && !loading && (
+                <div className="mt-6">
+                  <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-6 py-3 rounded-full font-semibold">
+                    <span className="text-xl">✓</span>
+                    Resume processed! Redirecting to review...
+                  </div>
                 </div>
               )}
+            </div>
+            
+            {/* Info Box */}
+            <div className="mt-6 bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <div className="flex gap-3">
+                <div className="text-2xl">💡</div>
+                <div>
+                  <h4 className="font-semibold text-blue-900 mb-1">What happens next?</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• We'll extract all available details from your resume</li>
+                    <li>• You'll review and fill in any missing information</li>
+                    <li>• Choose a template and deploy your portfolio</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2: Review & Edit Data */}
+      {currentStep === 2 && (
+        <div className="space-y-6">
+          {/* Extraction Summary */}
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl shadow-md p-6 border border-green-200">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl">✅</div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Resume Extracted Successfully!</h3>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-semibold text-green-700 mb-1">✓ Extracted Fields:</p>
+                    <ul className="text-gray-700 space-y-1">
+                      {portfolioData.name && <li>• Name</li>}
+                      {portfolioData.title && <li>• Job Title</li>}
+                      {portfolioData.email && <li>• Email</li>}
+                      {portfolioData.phone && <li>• Phone</li>}
+                      {portfolioData.location && <li>• Location</li>}
+                      {portfolioData.about && <li>• About/Bio</li>}
+                      {portfolioData.github && <li>• GitHub</li>}
+                      {portfolioData.linkedin && <li>• LinkedIn</li>}
+                      {portfolioData.skills.length > 0 && <li>• {portfolioData.skills.length} Skills</li>}
+                      {portfolioData.experience.length > 0 && <li>• {portfolioData.experience.length} Experience(s)</li>}
+                      {portfolioData.education.length > 0 && <li>• {portfolioData.education.length} Education(s)</li>}
+                      {portfolioData.projects.length > 0 && <li>• {portfolioData.projects.length} Project(s)</li>}
+                      {portfolioData.certifications.length > 0 && <li>• {portfolioData.certifications.length} Certification(s)</li>}
+                      {portfolioData.achievements.length > 0 && <li>• {portfolioData.achievements.length} Achievement(s)</li>}
+                      {portfolioData.languages.length > 0 && <li>• {portfolioData.languages.length} Language(s)</li>}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-yellow-700 mb-1">⚠️ Empty Fields (Fill Below):</p>
+                    <ul className="text-gray-700 space-y-1">
+                      {!portfolioData.name && <li>• Name</li>}
+                      {!portfolioData.title && <li>• Job Title</li>}
+                      {!portfolioData.email && <li>• Email</li>}
+                      {!portfolioData.phone && <li>• Phone</li>}
+                      {!portfolioData.location && <li>• Location</li>}
+                      {!portfolioData.about && <li>• About/Bio</li>}
+                      {!portfolioData.github && <li>• GitHub</li>}
+                      {!portfolioData.linkedin && <li>• LinkedIn</li>}
+                      {portfolioData.skills.length === 0 && <li>• Skills</li>}
+                      {portfolioData.experience.length === 0 && <li>• Experience</li>}
+                      {portfolioData.education.length === 0 && <li>• Education</li>}
+                      {portfolioData.projects.length === 0 && <li>• Projects</li>}
+                      {portfolioData.certifications.length === 0 && <li>• Certifications</li>}
+                      {portfolioData.achievements.length === 0 && <li>• Achievements</li>}
+                      {portfolioData.languages.length === 0 && <li>• Languages</li>}
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Manual Details Section - OPTIONAL */}
-          <div className="bg-white rounded-xl shadow-md p-8 relative">
-            <div className="absolute top-4 right-4">
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                OPTIONAL
-              </span>
+          <div className="bg-white rounded-xl shadow-md p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Review & Complete Your Portfolio</h2>
+              <button
+                onClick={() => setCurrentStep(1)}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              >
+                ← Re-upload Resume
+              </button>
             </div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="text-4xl">✍️</div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">Add Additional Details</h2>
-                <p className="text-gray-600 text-sm">Fill in any missing information manually</p>
+
+            {/* Personal Info */}
+            <div className="mb-8 p-6 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Personal Information</h3>
+                <span className="text-xs text-gray-500">* Required fields</span>
               </div>
-            </div>
-            <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={portfolioData.name}
                     onChange={(e) => handleDataUpdate('name', e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Enter your full name"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.name ? 'border-yellow-300 bg-yellow-50' : 'border-gray-300'
+                    }`}
                   />
+                  {!portfolioData.name && (
+                    <p className="text-xs text-yellow-600 mt-1">⚠️ Please add your name</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Title <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={portfolioData.title}
                     onChange={(e) => handleDataUpdate('title', e.target.value)}
-                    placeholder="Full Stack Developer"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="e.g., Full Stack Developer"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.title ? 'border-yellow-300 bg-yellow-50' : 'border-gray-300'
+                    }`}
                   />
+                  {!portfolioData.title && (
+                    <p className="text-xs text-yellow-600 mt-1">⚠️ Please add your job title</p>
+                  )}
                 </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
                     value={portfolioData.email}
                     onChange={(e) => handleDataUpdate('email', e.target.value)}
-                    placeholder="john@example.com"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder={!portfolioData.email ? "Add your email" : ""}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.email ? 'border-gray-200 bg-gray-50' : 'border-gray-300'
+                    }`}
                   />
                 </div>
                 <div>
@@ -470,20 +596,22 @@ function PortfolioGenerator() {
                     type="tel"
                     value={portfolioData.phone}
                     onChange={(e) => handleDataUpdate('phone', e.target.value)}
-                    placeholder="+1 234 567 890"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder={!portfolioData.phone ? "Add your phone number" : ""}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.phone ? 'border-gray-200 bg-gray-50' : 'border-gray-300'
+                    }`}
                   />
                 </div>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                   <input
                     type="text"
                     value={portfolioData.location}
                     onChange={(e) => handleDataUpdate('location', e.target.value)}
-                    placeholder="San Francisco, CA"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder={!portfolioData.location ? "Add your location" : ""}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.location ? 'border-gray-200 bg-gray-50' : 'border-gray-300'
+                    }`}
                   />
                 </div>
                 <div>
@@ -492,109 +620,34 @@ function PortfolioGenerator() {
                     type="url"
                     value={portfolioData.github}
                     onChange={(e) => handleDataUpdate('github', e.target.value)}
-                    placeholder="https://github.com/username"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">About / Bio</label>
-                <textarea
-                  value={portfolioData.about}
-                  onChange={(e) => handleDataUpdate('about', e.target.value)}
-                  rows="4"
-                  placeholder="Tell us about yourself..."
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Continue Button */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl shadow-md p-6 text-center">
-            <p className="text-gray-700 mb-4">
-              💡 <strong>Tip:</strong> You can use LinkedIn alone, or combine it with Resume and Manual details for a complete portfolio
-            </p>
-            <button
-              onClick={handleContinueToReview}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
-            >
-              Continue to Review & Edit →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 2: Review & Edit Data */}
-      {currentStep === 2 && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-md p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Review & Edit Your Data</h2>
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Add More Data
-              </button>
-            </div>
-
-            {/* Personal Info */}
-            <div className="mb-8 p-6 bg-gray-50 rounded-xl">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Personal Information</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                  <input
-                    type="text"
-                    value={portfolioData.name}
-                    onChange={(e) => handleDataUpdate('name', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={!portfolioData.github ? "Add your GitHub URL" : ""}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.github ? 'border-gray-200 bg-gray-50' : 'border-gray-300'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn</label>
                   <input
-                    type="text"
-                    value={portfolioData.title}
-                    onChange={(e) => handleDataUpdate('title', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={portfolioData.email}
-                    onChange={(e) => handleDataUpdate('email', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    value={portfolioData.phone}
-                    onChange={(e) => handleDataUpdate('phone', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="url"
+                    value={portfolioData.linkedin}
+                    onChange={(e) => handleDataUpdate('linkedin', e.target.value)}
+                    placeholder={!portfolioData.linkedin ? "Add your LinkedIn URL" : ""}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.linkedin ? 'border-gray-200 bg-gray-50' : 'border-gray-300'
+                    }`}
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                  <input
-                    type="text"
-                    value={portfolioData.location}
-                    onChange={(e) => handleDataUpdate('location', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">About</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">About / Bio</label>
                   <textarea
                     value={portfolioData.about}
                     onChange={(e) => handleDataUpdate('about', e.target.value)}
-                    rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="4"
+                    placeholder={!portfolioData.about ? "Add a brief description about yourself..." : ""}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !portfolioData.about ? 'border-gray-200 bg-gray-50' : 'border-gray-300'
+                    }`}
                   />
                 </div>
               </div>
@@ -817,6 +870,111 @@ function PortfolioGenerator() {
                 ))}
                 {portfolioData.projects.length === 0 && (
                   <p className="text-gray-500 text-center py-4">No projects added yet</p>
+                )}
+              </div>
+            </div>
+
+            {/* Certifications */}
+            <div className="mb-8 p-6 bg-gray-50 rounded-xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Certifications</h3>
+                <button
+                  onClick={handleAddCertification}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  + Add Certification
+                </button>
+              </div>
+              <div className="space-y-3">
+                {portfolioData.certifications.map((cert, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g., AWS Certified Developer - Amazon (2023)"
+                      value={cert}
+                      onChange={(e) => handleUpdateCertification(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleRemoveCertification(index)}
+                      className="px-3 py-2 text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {portfolioData.certifications.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No certifications added yet</p>
+                )}
+              </div>
+            </div>
+
+            {/* Achievements */}
+            <div className="mb-8 p-6 bg-gray-50 rounded-xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Achievements</h3>
+                <button
+                  onClick={handleAddAchievement}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  + Add Achievement
+                </button>
+              </div>
+              <div className="space-y-3">
+                {portfolioData.achievements.map((achievement, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g., Won National Hackathon 2023"
+                      value={achievement}
+                      onChange={(e) => handleUpdateAchievement(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleRemoveAchievement(index)}
+                      className="px-3 py-2 text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {portfolioData.achievements.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No achievements added yet</p>
+                )}
+              </div>
+            </div>
+
+            {/* Languages */}
+            <div className="mb-8 p-6 bg-gray-50 rounded-xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Languages</h3>
+                <button
+                  onClick={handleAddLanguage}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  + Add Language
+                </button>
+              </div>
+              <div className="space-y-3">
+                {portfolioData.languages.map((language, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g., English - Fluent"
+                      value={language}
+                      onChange={(e) => handleUpdateLanguage(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleRemoveLanguage(index)}
+                      className="px-3 py-2 text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {portfolioData.languages.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No languages added yet</p>
                 )}
               </div>
             </div>
@@ -1085,70 +1243,97 @@ function PortfolioGenerator() {
             </div>
           </div>
           
+          {deployError && (
+            <div className="bg-red-50 border-l-4 border-red-500 rounded-xl p-4">
+              <p className="text-red-700 text-sm">{deployError}</p>
+            </div>
+          )}
+          
           <button
-            onClick={handleGeneratePortfolio}
+            onClick={handleDeployPortfolio}
             disabled={loading}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Generating Portfolio...
+                Deploying Portfolio...
               </span>
             ) : (
-              '✨ Generate My Portfolio'
+              '🚀 Deploy Portfolio'
             )}
           </button>
         </div>
       )}
 
-      {/* STEP 4: Final Output */}
+      {/* STEP 4: Portfolio Link */}
       {currentStep === 4 && (
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <div className="text-6xl mb-6">🎉</div>
           <h2 className="text-3xl font-bold text-gray-800 mb-4">
-            Your Portfolio is Ready!
+            Your Portfolio is Live!
           </h2>
           <p className="text-gray-600 mb-8">
-            Your professional portfolio has been generated successfully
+            Your professional portfolio has been deployed successfully
           </p>
           
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border-2 border-blue-200">
-            <div className="text-4xl mb-3">📦</div>
-            <p className="text-lg font-semibold text-gray-800 mb-2">Download Your Portfolio</p>
-            <p className="text-sm text-gray-600 mb-4">
-              Get the complete source code as a ZIP file with HTML, CSS, and assets
-            </p>
-            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg">
-              📥 Download ZIP File
-            </button>
+            <div className="text-4xl mb-3">🔗</div>
+            <p className="text-lg font-semibold text-gray-800 mb-4">Your Portfolio Link</p>
+            <div className="bg-white rounded-lg p-4 mb-4 flex items-center justify-between gap-4">
+              <a 
+                href={portfolioLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700 font-medium break-all flex-1 text-left"
+              >
+                {portfolioLink}
+              </a>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(portfolioLink);
+                  alert('Link copied to clipboard!');
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all flex-shrink-0"
+              >
+                📋 Copy
+              </button>
+            </div>
+            <a 
+              href={portfolioLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
+            >
+              🌐 Visit Portfolio
+            </a>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-8">
             <button
-              onClick={() => setCurrentStep(3)}
+              onClick={() => {
+                setCurrentStep(3);
+                setPortfolioLink('');
+              }}
               className="bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-all"
             >
               🎨 Change Template
             </button>
             <button
-              onClick={() => setCurrentStep(2)}
+              onClick={() => {
+                setCurrentStep(2);
+                setPortfolioLink('');
+              }}
               className="bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all"
             >
               ✏️ Edit Content
             </button>
           </div>
 
-          <div className="grid md:grid-cols-1 gap-4">
-            <button className="border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all">
-              👁️ Preview Portfolio
-            </button>
-          </div>
-
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+          <div className="mt-8 p-4 bg-green-50 rounded-lg">
             <p className="text-sm text-gray-700">
-              💡 <strong>What you'll get:</strong> A complete portfolio website with all your data, 
-              ready to host on any platform (GitHub Pages, Netlify, Vercel, etc.)
+              ✅ <strong>Share your portfolio:</strong> Copy the link and share it on your resume, 
+              LinkedIn, job applications, or social media profiles!
             </p>
           </div>
         </div>
