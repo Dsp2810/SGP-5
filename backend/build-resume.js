@@ -537,7 +537,9 @@ rl.question('\nEnter your choice (1 or 2): ', (choice) => {
   if (choice === '1') {
     // Generate LaTeX/PDF
     const latexContent = generateLatexResume(resumeData);
-    const outputPath = path.join(outputDir, `resume_${timestamp}.tex`);
+    // Use person's name from resume data for filename
+    const nameSlug = resumeData.personalInfo.name.toLowerCase().replace(/\s+/g, '_');
+    const outputPath = path.join(outputDir, `${nameSlug}_${timestamp}.tex`);
     fs.writeFileSync(outputPath, latexContent, 'utf8');
     
     console.log('\n✅ Resume LaTeX file generated successfully!');
@@ -547,7 +549,9 @@ rl.question('\nEnter your choice (1 or 2): ', (choice) => {
     console.log('   Option 2: Install LaTeX and run: pdflatex resume.tex');
   } else if (choice === '2') {
     // Generate DOCX
-    const outputPath = path.join(outputDir, `resume_${timestamp}.docx`);
+    // Use person's name from resume data for filename
+    const nameSlug = resumeData.personalInfo.name.toLowerCase().replace(/\s+/g, '_');
+    const outputPath = path.join(outputDir, `${nameSlug}_${timestamp}.docx`);
     
     Packer.toBuffer(doc).then(buffer => {
       fs.writeFileSync(outputPath, buffer);

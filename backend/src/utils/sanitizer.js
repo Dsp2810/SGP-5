@@ -150,6 +150,35 @@ class SanitizerUtils {
   }
 
   /**
+   * URL-specific sanitization (preserves URL structure)
+   * @param {string} url - URL to sanitize
+   * @returns {string} - Sanitized URL
+   */
+  static sanitizeUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    
+    url = url.trim();
+    
+    // Remove any control characters or dangerous patterns
+    url = url.replace(/[\x00-\x1F\x7F]/g, '');
+    
+    // If already has protocol, clean it up
+    if (/^https?:\/\//i.test(url)) {
+      return url;
+    }
+    
+    // Remove any malformed protocol attempts
+    url = url.replace(/^(https?:)+/i, '');
+    
+    // Add https:// if missing
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return 'https://' + url.replace(/^\/+/, '');
+    }
+    
+    return url;
+  }
+
+  /**
    * Truncate text to specified length
    * @param {string} text - Text to truncate
    * @param {number} maxLength - Maximum length

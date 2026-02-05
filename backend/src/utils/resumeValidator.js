@@ -35,8 +35,9 @@ class ResumeValidator {
         email: SanitizerUtils.sanitizeText(data.personalInfo?.email || ''),
         phone: SanitizerUtils.sanitizeText(data.personalInfo?.phone || ''),
         location: SanitizerUtils.sanitizeText(data.personalInfo?.location || ''),
-        linkedin: SanitizerUtils.sanitizeText(data.personalInfo?.linkedin || ''),
-        github: SanitizerUtils.sanitizeText(data.personalInfo?.github || '')
+        linkedin: SanitizerUtils.sanitizeUrl(data.personalInfo?.linkedin || ''),
+        github: SanitizerUtils.sanitizeUrl(data.personalInfo?.github || ''),
+        website: SanitizerUtils.sanitizeUrl(data.personalInfo?.website || '')
       },
       education: (data.education || []).filter(edu => edu.degree).map(edu => ({
         degree: SanitizerUtils.sanitizeText(edu.degree),
@@ -57,7 +58,7 @@ class ResumeValidator {
         title: SanitizerUtils.sanitizeText(proj.title),
         description: SanitizerUtils.sanitizeText(proj.description || ''),
         technologies: (proj.technologies || []).filter(t => t).map(t => SanitizerUtils.sanitizeText(t)),
-        link: SanitizerUtils.sanitizeText(proj.link || '')
+        link: SanitizerUtils.sanitizeUrl(proj.link || '')
       })),
       skills: {
         technical: (data.skills?.technical || []).filter(s => s).map(s => SanitizerUtils.sanitizeText(s)),
