@@ -15,7 +15,7 @@ cloudinary.config({
 
 // Hugging Face Configuration
 const HF_TOKEN = process.env.HF_TOKEN;
-const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"; // Free model
+const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"; // Updated to v0.3
 
 /**
  * Call Hugging Face Inference API
@@ -27,33 +27,52 @@ async function queryHuggingFace(prompt) {
   }
 
   try {
+    // Use Text Generation Inference endpoint with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const response = await fetch(
-      `https://router.huggingface.co/hf-inference/models/${HF_MODEL}`,
+      `https://api-inference.huggingface.co/models/${HF_MODEL}`,
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${HF_TOKEN}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-wait-for-model': 'true' // Wait for model to load
         },
         body: JSON.stringify({
           inputs: prompt,
           parameters: {
             max_new_tokens: 800,
             temperature: 0.1,
-            return_full_text: false
+            return_full_text: false,
+            do_sample: false
+          },
+          options: {
+            wait_for_model: true,
+            use_cache: false
           }
-        })
+        }),
+        signal: controller.signal
       }
     );
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.log(`HF API Error (${response.status}):`, errorText);
+      
+      // Check if model is loading
+      if (response.status === 503) {
+        console.log('⏳ Model is loading, will use regex fallback for now');
+      }
       return null;
     }
 
     const result = await response.json();
 
+    // Handle different response formats
     if (Array.isArray(result) && result[0]?.generated_text) {
       return result[0].generated_text;
     }
@@ -62,15 +81,24 @@ async function queryHuggingFace(prompt) {
       return result.generated_text;
     }
 
+    if (result[0]?.generated_text) {
+      return result[0].generated_text;
+    }
+
     if (result.error) {
       console.log("HF Model Error:", result.error);
       return null;
     }
 
+    console.log('⚠️ Unexpected response format:', JSON.stringify(result).substring(0, 200));
     return null;
 
   } catch (error) {
-    console.log('HF API Exception:', error.message);
+    if (error.name === 'AbortError') {
+      console.log('⏱️ HF API timeout after 30 seconds');
+    } else {
+      console.log('HF API Exception:', error.message);
+    }
     return null;
   }
 }
@@ -153,7 +181,7 @@ Return JSON exactly in this structure:
       "position": "",
       "company": "",
       "duration": "",
-      "description": ""
+      "description"
     }
   ],
   "education": [
