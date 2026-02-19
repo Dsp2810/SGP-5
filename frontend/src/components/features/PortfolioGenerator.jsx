@@ -453,20 +453,6 @@ function PortfolioGenerator() {
               )}
             </div>
             
-            {/* Info Box */}
-            <div className="mt-6 bg-blue-50 rounded-xl p-4 border border-blue-200">
-              <div className="flex gap-3">
-                <div className="text-2xl">💡</div>
-                <div>
-                  <h4 className="font-semibold text-blue-900 mb-1">What happens next?</h4>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• We'll extract all available details from your resume</li>
-                    <li>• You'll review and fill in any missing information</li>
-                    <li>• Choose a template and deploy your portfolio</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
