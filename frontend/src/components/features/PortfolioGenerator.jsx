@@ -986,7 +986,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-blue-600 to-cyan-600 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-blue-600 to-cyan-600 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-blue-600 text-2xl font-bold">
                     A
@@ -1010,7 +1010,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-orange-500 to-red-500 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-orange-600 text-2xl font-bold">
                     B
@@ -1034,7 +1034,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-green-600 to-emerald-600 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-green-600 text-2xl font-bold">
                     C
@@ -1058,7 +1058,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-purple-600 to-pink-600 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-purple-600 text-2xl font-bold">
                     D
@@ -1106,7 +1106,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-teal-500 to-cyan-500 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-teal-600 text-2xl font-bold">
                     F
@@ -1130,7 +1130,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-rose-500 to-pink-500 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-rose-500 to-pink-500 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-rose-600 text-2xl font-bold">
                     G
@@ -1154,7 +1154,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-amber-600 to-yellow-600 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-amber-600 to-yellow-600 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-amber-600 text-2xl font-bold">
                     H
@@ -1178,7 +1178,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-slate-700 to-gray-700 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-slate-700 to-gray-700 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-slate-700 text-2xl font-bold">
                     I
@@ -1202,7 +1202,7 @@ function PortfolioGenerator() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="bg-gradient-to-r from-indigo-600 to-violet-600 h-48 flex items-center justify-center text-white">
+              <div className="bg-linear-to-r from-indigo-600 to-violet-600 h-48 flex items-center justify-center text-white">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-white rounded-full mx-auto mb-2 flex items-center justify-center text-indigo-600 text-2xl font-bold">
                     J
@@ -1227,7 +1227,7 @@ function PortfolioGenerator() {
           <button
             onClick={handleDeployPortfolio}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all"
+            className="w-full bg-linear-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -1252,7 +1252,7 @@ function PortfolioGenerator() {
             Your professional portfolio has been deployed successfully
           </p>
           
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border-2 border-blue-200">
+          <div className="bg-linear-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border-2 border-blue-200">
             <div className="text-4xl mb-3">🔗</div>
             <p className="text-lg font-semibold text-gray-800 mb-4">Your Portfolio Link</p>
             <div className="bg-white rounded-lg p-4 mb-4 flex items-center justify-between gap-4">
@@ -1278,7 +1278,7 @@ function PortfolioGenerator() {
               href={portfolioLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
+              className="inline-block bg-linear-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
             >
               🌐 Visit Portfolio
             </a>
