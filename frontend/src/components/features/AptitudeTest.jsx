@@ -5,7 +5,7 @@ function AptitudeTest() {
   const [testStarted, setTestStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+  const [timeLeft, _setTimeLeft] = useState(1800); // 30 minutes - timer not yet implemented
   const [showResults, setShowResults] = useState(false);
 
   const testCategories = [
@@ -196,7 +196,7 @@ function AptitudeTest() {
                 className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
                 onClick={() => handleStartTest(test)}
               >
-                <div className={`bg-gradient-to-r ${test.color} p-6 text-white`}>
+                <div className={`bg-linear-to-r ${test.color} p-6 text-white`}>
                   <div className="text-5xl mb-3">{test.icon}</div>
                   <h3 className="text-xl font-bold mb-2">{test.name}</h3>
                   <p className="text-white text-opacity-90 text-sm">{test.description}</p>
@@ -216,7 +216,7 @@ function AptitudeTest() {
                       {test.questions} Questions
                     </span>
                   </div>
-                  <button className="w-full bg-gray-100 group-hover:bg-gradient-to-r group-hover:from-gray-700 group-hover:to-gray-600 text-gray-700 group-hover:text-white py-2.5 rounded-lg font-semibold transition-all duration-300">
+                  <button className="w-full bg-gray-100 group-hover:bg-linear-to-r group-hover:from-gray-700 group-hover:to-gray-600 text-gray-700 group-hover:text-white py-2.5 rounded-lg font-semibold transition-all duration-300">
                     Start Test
                   </button>
                 </div>
@@ -264,7 +264,7 @@ function AptitudeTest() {
       ) : showResults ? (
         /* Results Screen */
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-gray-700 to-gray-600 rounded-xl p-8 text-white shadow-xl">
+          <div className="bg-linear-to-r from-gray-700 to-gray-600 rounded-xl p-8 text-white shadow-xl">
             <div className="text-center">
               <h2 className="text-3xl font-bold mb-4">Test Completed! 🎉</h2>
               <div className="text-7xl font-bold mb-2">{calculateScore().percentage}%</div>
@@ -294,7 +294,7 @@ function AptitudeTest() {
           <div className="flex gap-4">
             <button
               onClick={() => setTestStarted(false)}
-              className="flex-1 bg-gradient-to-r from-gray-700 to-gray-600 text-white py-3 rounded-xl font-semibold hover:from-gray-800 hover:to-gray-700 transition-all"
+              className="flex-1 bg-linear-to-r from-gray-700 to-gray-600 text-white py-3 rounded-xl font-semibold hover:from-gray-800 hover:to-gray-700 transition-all"
             >
               Back to Tests
             </button>
@@ -322,7 +322,7 @@ function AptitudeTest() {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
               <div
-                className="bg-gradient-to-r from-gray-700 to-gray-600 h-2 rounded-full transition-all"
+                className="bg-linear-to-r from-gray-700 to-gray-600 h-2 rounded-full transition-all"
                 style={{
                   width: `${((currentQuestion + 1) / (sampleQuestions[selectedTest.id] || sampleQuestions.quantitative).length) * 100}%`
                 }}
@@ -368,7 +368,7 @@ function AptitudeTest() {
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 bg-gradient-to-r from-gray-700 to-gray-600 text-white py-3 rounded-xl font-semibold hover:from-gray-800 hover:to-gray-700 transition-all"
+              className="flex-1 bg-linear-to-r from-gray-700 to-gray-600 text-white py-3 rounded-xl font-semibold hover:from-gray-800 hover:to-gray-700 transition-all"
             >
               {currentQuestion < (sampleQuestions[selectedTest.id] || sampleQuestions.quantitative).length - 1
                 ? 'Next Question'

@@ -127,17 +127,6 @@ function PortfolioGenerator() {
     }
   };
 
-  // Continue to Review
-  const handleContinueToReview = () => {
-    if (!portfolioData.name || !portfolioData.title) {
-      setValidationError('Please provide at least your name and job title (upload resume or enter manually)');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    setValidationError('');
-    setCurrentStep(2);
-  };
-
   // STEP 2: Update portfolio data in review
   const handleDataUpdate = (field, value) => {
     setPortfolioData(prev => ({
@@ -461,7 +450,7 @@ function PortfolioGenerator() {
       {currentStep === 2 && (
         <div className="space-y-6">
           {/* Extraction Summary */}
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl shadow-md p-6 border border-green-200">
+          <div className="bg-linear-to-r from-green-50 to-blue-50 rounded-xl shadow-md p-6 border border-green-200">
             <div className="flex items-start gap-4">
               <div className="text-4xl">✅</div>
               <div className="flex-1">
@@ -1280,7 +1269,7 @@ function PortfolioGenerator() {
                   navigator.clipboard.writeText(portfolioLink);
                   alert('Link copied to clipboard!');
                 }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all flex-shrink-0"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shrink-0"
               >
                 📋 Copy
               </button>

@@ -135,7 +135,7 @@ function ATSAnalyzer() {
             <button
               type="submit"
               disabled={analyzing}
-              className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 rounded-lg font-semibold hover:from-gray-900 hover:to-black transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-gray-800 to-gray-900 text-white py-3 rounded-lg font-semibold hover:from-gray-900 hover:to-black transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {analyzing ? (
                 <span className="flex items-center justify-center gap-2">
@@ -157,7 +157,7 @@ function ATSAnalyzer() {
       {results && (
         <div className="space-y-6">
           {/* Score Display */}
-          <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-8 text-white shadow-xl text-center">
+          <div className="bg-linear-to-r from-gray-800 to-gray-900 rounded-xl p-8 text-white shadow-xl text-center">
             <p className="text-gray-300 text-lg mb-2">ATS Match Score</p>
             <div className="text-6xl font-bold mb-3">{results.score ? Math.round(results.score) : 0}%</div>
             <div className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${

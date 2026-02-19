@@ -8,37 +8,29 @@ function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Decode token to get user info
-    const token = localStorage.getItem('token');
-    if (token) {
+    // Fetch user details from backend
+    const fetchUserDetails = async () => {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        // You can fetch full user details from backend if needed
-        // For now, we'll use a placeholder or fetch from an API
-        fetchUserDetails();
-      } catch (error) {
-        console.error('Error decoding token:', error);
-      }
-    }
-  }, []);
-
-  const fetchUserDetails = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch('http://localhost:5000/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUserName(data.name || 'User');
         }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUserName(data.name || 'User');
+      } catch (error) {
+        console.error('Error fetching user details:', error);
       }
-    } catch (error) {
-      console.error('Error fetching user details:', error);
-    }
-  };
+    };
+
+    fetchUserDetails();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
