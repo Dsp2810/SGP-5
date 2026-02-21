@@ -7,5 +7,6 @@ router.use("/application", require("./application.routes"));
 router.use("/jobs", require("./job.routes"));
 router.use("/ats", require("./ats.routes"));
 router.use("/portfolio", require("./portfolio.routes"));
+router.use("/aptitude", require("./aptitude.routes"));
 
 module.exports = router;

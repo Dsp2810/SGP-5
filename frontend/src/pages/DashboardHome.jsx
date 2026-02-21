@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 function DashboardHome() {
   const features = [
     {
-      title: 'Portfolio Generator',
-      icon: '💼',
-      link: '/dashboard/portfolio',
-      color: 'from-blue-500 to-blue-600'
+      title: 'Aptitude Tests',
+      icon: '✅',
+      link: '/dashboard/aptitude',
+      color: 'from-indigo-500 to-indigo-600'
     },
     {
       title: 'Resume Builder',
@@ -15,14 +15,7 @@ function DashboardHome() {
       color: 'from-green-500 to-green-600'
     },
     {
-      title: 'Job Tracker',
-      icon: '📊',
-      link: '/dashboard/jobs',
-      color: 'from-purple-500 to-purple-600'
-    },
-    {
       title: 'ATS Analyzer',
-
       icon: '📈',
       link: '/dashboard/ats',
       color: 'from-orange-500 to-orange-600'
@@ -34,10 +27,16 @@ function DashboardHome() {
       color: 'from-red-500 to-red-600'
     },
     {
-      title: 'Aptitude Tests',
-      icon: '✅',
-      link: '/dashboard/aptitude',
-      color: 'from-indigo-500 to-indigo-600'
+      title: 'Job Tracker',
+      icon: '📊',
+      link: '/dashboard/jobs',
+      color: 'from-purple-500 to-purple-600'
+    },
+    {
+      title: 'Portfolio Generator',
+      icon: '💼',
+      link: '/dashboard/portfolio',
+      color: 'from-blue-500 to-blue-600'
     }
   ];
 
