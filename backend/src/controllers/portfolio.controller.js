@@ -5,7 +5,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const cloudinary = require('cloudinary').v2;
 const Portfolio = require('../models/Portfolio');
-const { spawn } = require('child_process');
+const { parseResumeWithGroq, mapToPortfolioSchema } = require('../services/groqResumeParser');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -57,115 +57,34 @@ const extractTextFromFile = async (file) => {
   }
 };
 
-/**
- * Extract portfolio data using Surya OCR (Python script)
- * This is the primary and only extraction method for portfolio generation
- * Handles scanned PDFs, images, and text-based PDFs
- */
-const extractPortfolioDataWithOCR = async (filePath) => {
-  return new Promise((resolve, reject) => {
-    const pythonScript = path.join(__dirname, '../services/resumeOCR.py');
-    
-    // Spawn Python process
-    const pythonCmd = process.env.PYTHON_PATH || 'C:/Users/HP/AppData/Local/GitHubDesktop/SGP-5/.venv/Scripts/python.exe';
-    const pythonProcess = spawn(pythonCmd, [pythonScript, filePath]);
-    
-    let dataString = '';
-    let errorString = '';
-    
-    pythonProcess.stdout.on('data', (data) => {
-      dataString += data.toString();
-    });
-    
-    pythonProcess.stderr.on('data', (data) => {
-      errorString += data.toString();
-    });
-    
-    let timeoutHandle;
-    
-    pythonProcess.on('close', (code) => {
-      clearTimeout(timeoutHandle);
-      if (code !== 0) {
-        console.error('Surya OCR Error (exit code ' + code + '):\n' + errorString);
-        return resolve(null);
-      }
-      
-      if (errorString) {
-        console.log('Surya OCR stderr (warnings):\n' + errorString);
-      }
-      
-      try {
-        // Find the last JSON object in stdout (ignore progress/warning lines)
-        const jsonMatch = dataString.match(/(\{[\s\S]*\})\s*$/);
-        if (!jsonMatch) {
-          console.error('No JSON in OCR output. stdout:', dataString.substring(0, 500));
-          return resolve(null);
-        }
-        const result = JSON.parse(jsonMatch[1]);
-        if (result.success) {
-          console.log('Surya OCR extraction successful!');
-          resolve(result.data);
-        } else {
-          console.error('Surya OCR failed:', result.error);
-          resolve(null);
-        }
-      } catch (error) {
-        console.error('Failed to parse Surya OCR output:', error.message);
-        console.error('Raw stdout:', dataString.substring(0, 500));
-        resolve(null);
-      }
-    });
-    
-    // Set timeout for OCR process (10 min to allow model download on first run)
-    timeoutHandle = setTimeout(() => {
-      pythonProcess.kill();
-      console.error('Surya OCR timeout after 10 minutes');
-      resolve(null);
-    }, 600000);
-  });
-};
+// extractPortfolioDataWithOCR removed — replaced by Groq API (groqResumeParser.js)
 
 /**
- * Parse resume and extract portfolio details using Surya OCR only
+ * Parse resume and extract portfolio details using Groq API
  */
 exports.parseResume = async (req, res) => {
-  let tempFilePath = null;
-  
   try {
-    // Check if file was uploaded
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload a resume file (PDF, DOCX, or image)'
+        message: 'Please upload a resume file (PDF or DOCX)'
       });
     }
 
-    console.log('ðŸ” Extracting portfolio data using Surya OCR...');
     
-    // Save file temporarily for OCR processing
-    const tempDir = path.join(__dirname, '../../temp');
-    await fs.mkdir(tempDir, { recursive: true });
-    tempFilePath = path.join(tempDir, `${Date.now()}_${req.file.originalname}`);
-    await fs.writeFile(tempFilePath, req.file.buffer);
-    
-    // Use Surya OCR for all file types
-    const portfolioData = await extractPortfolioDataWithOCR(tempFilePath);
+    console.log('Extracting text from resume...');
+    const resumeText = await extractTextFromFile(req.file);
 
-    if (!portfolioData) {
+    if (!resumeText || resumeText.trim().length < 50) {
       return res.status(400).json({
         success: false,
-        message: 'Could not extract data from resume. Please ensure the file is readable and contains standard resume sections (Education, Experience, Skills, etc.).'
+        message: 'Could not extract readable text from the file. Please upload a text-based PDF or DOCX.'
       });
     }
 
-    // Clean up temporary file
-    if (tempFilePath) {
-      try {
-        await fs.unlink(tempFilePath);
-      } catch (err) {
-        console.error('Failed to delete temp file:', err);
-      }
-    }
+    console.log(`Extracted ${resumeText.length} characters. Sending to Groq API...`);
+    const groqData = await parseResumeWithGroq(resumeText);
+    const portfolioData = mapToPortfolioSchema(groqData);
 
     res.json({
       success: true,
@@ -174,16 +93,6 @@ exports.parseResume = async (req, res) => {
     });
   } catch (error) {
     console.error('Resume parsing error:', error);
-    
-    // Clean up temporary file on error
-    if (tempFilePath) {
-      try {
-        await fs.unlink(tempFilePath);
-      } catch (err) {
-        console.error('Failed to delete temp file:', err);
-      }
-    }
-    
     res.status(500).json({
       success: false,
       message: 'Failed to parse resume',
