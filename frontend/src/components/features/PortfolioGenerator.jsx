@@ -41,8 +41,7 @@ function PortfolioGenerator() {
     skills: [],
     projects: [],
     certifications: [],
-    achievements: [],
-    languages: []
+    achievements: []
   });
 
   // Selected template
@@ -107,8 +106,7 @@ function PortfolioGenerator() {
           skills: result.data.skills || [],
           projects: result.data.projects || [],
           certifications: result.data.certifications || [],
-          achievements: result.data.achievements || [],
-          languages: result.data.languages || []
+          achievements: result.data.achievements || []
         }));
         setResumeParsed(true);
         
@@ -282,30 +280,6 @@ function PortfolioGenerator() {
     }));
   };
 
-  // Languages handlers
-  const handleAddLanguage = () => {
-    setPortfolioData(prev => ({
-      ...prev,
-      languages: [...prev.languages, '']
-    }));
-  };
-
-  const handleRemoveLanguage = (index) => {
-    setPortfolioData(prev => ({
-      ...prev,
-      languages: prev.languages.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleUpdateLanguage = (index, value) => {
-    setPortfolioData(prev => ({
-      ...prev,
-      languages: prev.languages.map((lang, i) => 
-        i === index ? value : lang
-      )
-    }));
-  };
-
   // STEP 3: Deploy portfolio and get link
   const handleDeployPortfolio = async () => {
     setLoading(true);
@@ -473,7 +447,6 @@ function PortfolioGenerator() {
                       {portfolioData.projects.length > 0 && <li>• {portfolioData.projects.length} Project(s)</li>}
                       {portfolioData.certifications.length > 0 && <li>• {portfolioData.certifications.length} Certification(s)</li>}
                       {portfolioData.achievements.length > 0 && <li>• {portfolioData.achievements.length} Achievement(s)</li>}
-                      {portfolioData.languages.length > 0 && <li>• {portfolioData.languages.length} Language(s)</li>}
                     </ul>
                   </div>
                   <div>
@@ -493,7 +466,6 @@ function PortfolioGenerator() {
                       {portfolioData.projects.length === 0 && <li>• Projects</li>}
                       {portfolioData.certifications.length === 0 && <li>• Certifications</li>}
                       {portfolioData.achievements.length === 0 && <li>• Achievements</li>}
-                      {portfolioData.languages.length === 0 && <li>• Languages</li>}
                     </ul>
                   </div>
                 </div>
@@ -915,41 +887,6 @@ function PortfolioGenerator() {
                 ))}
                 {portfolioData.achievements.length === 0 && (
                   <p className="text-gray-500 text-center py-4">No achievements added yet</p>
-                )}
-              </div>
-            </div>
-
-            {/* Languages */}
-            <div className="mb-8 p-6 bg-gray-50 rounded-xl">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Languages</h3>
-                <button
-                  onClick={handleAddLanguage}
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                >
-                  + Add Language
-                </button>
-              </div>
-              <div className="space-y-3">
-                {portfolioData.languages.map((language, index) => (
-                  <div key={index} className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g., English - Fluent"
-                      value={language}
-                      onChange={(e) => handleUpdateLanguage(index, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      onClick={() => handleRemoveLanguage(index)}
-                      className="px-3 py-2 text-red-500 hover:text-red-700 font-medium"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                {portfolioData.languages.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">No languages added yet</p>
                 )}
               </div>
             </div>

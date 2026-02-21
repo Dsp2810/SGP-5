@@ -1,2 +1,6 @@
 sentence-transformers
 torch
+surya-ocr
+pillow
+pdf2image
+pypdfium2

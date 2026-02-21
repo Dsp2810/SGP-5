@@ -50,7 +50,6 @@ const portfolioSchema = new mongoose.Schema({
   }],
   certifications: [String],
   achievements: [String],
-  languages: [String],
   isPublished: {
     type: Boolean,
     default: true

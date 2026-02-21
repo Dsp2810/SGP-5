@@ -1,10 +1,11 @@
-const pdfParse = require('pdf-parse');
+﻿const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const fs = require('fs').promises;
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const cloudinary = require('cloudinary').v2;
 const Portfolio = require('../models/Portfolio');
+const { spawn } = require('child_process');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -12,96 +13,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY || 'your_api_key',
   api_secret: process.env.CLOUDINARY_API_SECRET || 'your_api_secret'
 });
-
-// Hugging Face Configuration
-const HF_TOKEN = process.env.HF_TOKEN;
-const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"; // Updated to v0.3
-
-/**
- * Call Hugging Face Inference API
- */
-async function queryHuggingFace(prompt) {
-  if (!HF_TOKEN || HF_TOKEN === 'your_huggingface_token_here') {
-    console.log('⚠️ HF_TOKEN not configured, skipping AI extraction');
-    return null;
-  }
-
-  try {
-    // Use Text Generation Inference endpoint with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-    const response = await fetch(
-      `https://api-inference.huggingface.co/models/${HF_MODEL}`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${HF_TOKEN}`,
-          'Content-Type': 'application/json',
-          'x-wait-for-model': 'true' // Wait for model to load
-        },
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 800,
-            temperature: 0.1,
-            return_full_text: false,
-            do_sample: false
-          },
-          options: {
-            wait_for_model: true,
-            use_cache: false
-          }
-        }),
-        signal: controller.signal
-      }
-    );
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log(`HF API Error (${response.status}):`, errorText);
-      
-      // Check if model is loading
-      if (response.status === 503) {
-        console.log('⏳ Model is loading, will use regex fallback for now');
-      }
-      return null;
-    }
-
-    const result = await response.json();
-
-    // Handle different response formats
-    if (Array.isArray(result) && result[0]?.generated_text) {
-      return result[0].generated_text;
-    }
-
-    if (result.generated_text) {
-      return result.generated_text;
-    }
-
-    if (result[0]?.generated_text) {
-      return result[0].generated_text;
-    }
-
-    if (result.error) {
-      console.log("HF Model Error:", result.error);
-      return null;
-    }
-
-    console.log('⚠️ Unexpected response format:', JSON.stringify(result).substring(0, 200));
-    return null;
-
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      console.log('⏱️ HF API timeout after 30 seconds');
-    } else {
-      console.log('HF API Exception:', error.message);
-    }
-    return null;
-  }
-}
 
 /**
  * Extract text from PDF file
@@ -147,457 +58,113 @@ const extractTextFromFile = async (file) => {
 };
 
 /**
- * Extract portfolio details using Hugging Face AI
+ * Extract portfolio data using Surya OCR (Python script)
+ * This is the primary and only extraction method for portfolio generation
+ * Handles scanned PDFs, images, and text-based PDFs
  */
-const extractPortfolioDataWithAI = async (resumeText) => {
-  // Production-grade prompt optimized for clean JSON output
-  const PROMPT_TEMPLATE = `You are an expert resume parser.
-
-Extract information from the resume and return ONLY valid JSON.
-Do not add explanations.
-Do not use markdown.
-Do not include any extra text.
-Never wrap JSON in code blocks.
-Return the JSON on a single line.
-
-If a field is missing, use empty string "" or empty array [].
-
-Resume:
-{{RESUME_TEXT}}
-
-Return JSON exactly in this structure:
-
-{
-  "name": "",
-  "email": "",
-  "phone": "",
-  "location": "",
-  "title": "",
-  "about": "",
-  "github": "",
-  "linkedin": "",
-  "experience": [
-    {
-      "position": "",
-      "company": "",
-      "duration": "",
-      "description"
-    }
-  ],
-  "education": [
-    {
-      "degree": "",
-      "institution": "",
-      "year": ""
-    }
-  ],
-  "skills": [],
-  "projects": [
-    {
-      "name": "",
-      "description": "",
-      "technologies": [],
-      "link": ""
-    }
-  ],
-  "certifications": [],
-  "achievements": [],
-  "languages": []
-}`;
-
-  // Inject resume text into prompt (limit to 2000 chars for token efficiency)
-  const prompt = PROMPT_TEMPLATE.replace('{{RESUME_TEXT}}', resumeText.substring(0, 2000));
-
-  console.log('🤖 Calling Hugging Face API...');
-  const generatedText = await queryHuggingFace(prompt);
-
-  if (!generatedText) {
-    console.log('❌ HF API failed, using regex fallback');
-    return null;
-  }
-
-  console.log('✅ HF API returned:', generatedText.substring(0, 200) + '...');
-
-  // Extract JSON from the response
-  try {
-    // Try to find JSON object in response
-    const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsedData = JSON.parse(jsonMatch[0]);
-      
-      // Validate the data has some expected fields
-      if (parsedData.name || parsedData.email || parsedData.experience) {
-        console.log('✅ Successfully parsed AI extracted data');
-        return parsedData;
-      }
-    }
-  } catch (error) {
-    console.log('❌ Failed to parse JSON from AI response:', error.message);
-  }
-
-  return null;
-};
-
-/**
- * Extract portfolio details from resume text (fallback regex method)
-```
- */
-const extractPortfolioData = (text) => {
-  const data = {
-    name: '',
-    email: '',
-    phone: '',
-    location: '',
-    title: '',
-    about: '',
-    github: '',
-    linkedin: '',
-    portfolio: '',
-    experience: [],
-    education: [],
-    skills: [],
-    projects: [],
-    certifications: [],
-    achievements: [],
-    languages: []
-  };
-
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-  const textLower = text.toLowerCase();
-
-  // Extract email
-  const emailMatch = text.match(/[\w\.-]+@[\w\.-]+\.\w{2,}/);
-  if (emailMatch) data.email = emailMatch[0].toLowerCase();
-
-  // Extract phone - Indian and international formats
-  const phonePatterns = [
-    /(?:\+91[-.\s]?)?[6-9]\d{9}/,
-    /(?:\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,
-    /\d{5}[-.\s]?\d{5}/
-  ];
-  for (const pattern of phonePatterns) {
-    const phoneMatch = text.match(pattern);
-    if (phoneMatch) {
-      data.phone = phoneMatch[0];
-      break;
-    }
-  }
-
-  // Extract GitHub URL
-  const githubMatch = text.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+/i);
-  if (githubMatch) data.github = githubMatch[0].startsWith('http') ? githubMatch[0] : `https://${githubMatch[0]}`;
-
-  // Extract LinkedIn URL
-  const linkedinMatch = text.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w-]+/i);
-  if (linkedinMatch) data.linkedin = linkedinMatch[0].startsWith('http') ? linkedinMatch[0] : `https://${linkedinMatch[0]}`;
-
-  // Extract name (first few lines, 2-5 words, no special chars)
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
-    const line = lines[i];
-    const wordCount = line.split(' ').filter(w => w.length > 0).length;
-    if (line.length >= 3 && line.length <= 50 && 
-        wordCount >= 2 && wordCount <= 5 &&
-        /^[A-Z][a-zA-Z\s\.]+$/.test(line) && 
-        !line.includes('@') && !line.includes('http')) {
-      data.name = line;
-      break;
-    }
-  }
-
-  // Extract title/position
-  const titlePatterns = [
-    /(?:Senior|Junior|Lead|Principal|Staff|Sr\.?|Jr\.?)\s+(?:Software|Full[\s-]?Stack|Front[\s-]?End|Back[\s-]?End|Web|Mobile|DevOps|Data|AI|ML|Cloud)\s+(?:Developer|Engineer|Architect)/i,
-    /(?:Full[\s-]?Stack|Front[\s-]?End|Back[\s-]?End|Software|Web|Mobile|DevOps|Data|AI|ML|Cloud)\s+(?:Developer|Engineer|Architect|Scientist)/i,
-    /(?:Product|Project|Program|Engineering|Technical)\s+(?:Manager|Lead|Head|Director)/i,
-    /(?:UI\/UX|UX\/UI)\s+(?:Designer|Developer)/i
-  ];
-  
-  for (const pattern of titlePatterns) {
-    const titleMatch = text.match(pattern);
-    if (titleMatch) {
-      data.title = titleMatch[0].replace(/\s+/g, ' ').trim();
-      break;
-    }
-  }
-
-  // Extract location
-  const locationPatterns = [
-    /(?:Mumbai|Delhi|Bangalore|Bengaluru|Hyderabad|Chennai|Pune|Kolkata|Ahmedabad|Jaipur|Surat|Lucknow|Nagpur|Gurgaon|Gurugram|Noida)[,\s]+(?:India|Maharashtra|Karnataka|Tamil Nadu|Telangana|Gujarat|Delhi|Haryana|UP)/i,
-    /(?:San Francisco|New York|Los Angeles|Seattle|Austin|Boston)[,\s]+(?:USA|US|California|CA|NY|Texas|TX|Washington|WA|MA)/i,
-    /(?:London|Manchester|Birmingham|Edinburgh)[,\s]+(?:UK|United Kingdom|England|Scotland)/i
-  ];
-  
-  for (const pattern of locationPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      data.location = match[0];
-      break;
-    }
-  }
-
-  // Extract about/summary
-  const aboutMatch = text.match(/(?:SUMMARY|PROFESSIONAL SUMMARY|OBJECTIVE|PROFILE|ABOUT)[\s:]*\n([\s\S]{50,500}?)(?=\n(?:EXPERIENCE|EDUCATION|SKILLS|PROJECTS|[A-Z]{4,})|$)/i);
-  if (aboutMatch) {
-    data.about = aboutMatch[1].trim().replace(/\s+/g, ' ');
-  }
-
-  // Extract skills
-  const skillsMatch = text.match(/(?:SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|TECHNOLOGIES)[\s:]*\n([\s\S]{20,800}?)(?=\n(?:EXPERIENCE|EDUCATION|PROJECTS|CERTIFICATIONS|[A-Z]{4,})|$)/i);
-  if (skillsMatch) {
-    const skillsText = skillsMatch[1];
-    const skillSet = new Set();
+const extractPortfolioDataWithOCR = async (filePath) => {
+  return new Promise((resolve, reject) => {
+    const pythonScript = path.join(__dirname, '../services/resumeOCR.py');
     
-    // Method 1: Comma/pipe separated
-    const parts = skillsText.split(/[,|•·●∙]/);
-    parts.forEach(part => {
-      const cleaned = part.trim().replace(/^[-•·●∙\s]+/, '').replace(/[^\w\s\+\#\.\-]/g, '').trim();
-      if (cleaned.length >= 2 && cleaned.length <= 30 && !/^(and|or|the)$/i.test(cleaned)) {
-        skillSet.add(cleaned);
-      }
+    // Spawn Python process
+    const pythonCmd = process.env.PYTHON_PATH || 'C:/Users/HP/AppData/Local/GitHubDesktop/SGP-5/.venv/Scripts/python.exe';
+    const pythonProcess = spawn(pythonCmd, [pythonScript, filePath]);
+    
+    let dataString = '';
+    let errorString = '';
+    
+    pythonProcess.stdout.on('data', (data) => {
+      dataString += data.toString();
     });
     
-    // Method 2: Line by line
-    skillsText.split('\n').forEach(line => {
-      const cleaned = line.trim().replace(/^[-•·●∙\s]+/, '').replace(/[:;].*$/, '').trim();
-      if (cleaned.length >= 2 && cleaned.length <= 30 && !cleaned.includes('  ')) {
-        skillSet.add(cleaned);
-      }
+    pythonProcess.stderr.on('data', (data) => {
+      errorString += data.toString();
     });
     
-    data.skills = Array.from(skillSet).slice(0, 30);
-  }
-
-  // Extract experience with multiple strategies - MUST EXTRACT IF EXISTS
-  const expMatch = text.match(/(?:EXPERIENCE|WORK EXPERIENCE|EMPLOYMENT|PROFESSIONAL EXPERIENCE|CAREER HISTORY)[\s:]*\n([\s\S]{50,4000}?)(?=\n(?:EDUCATION|PROJECTS|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|[A-Z]{5,})|$)/i);
-  if (expMatch) {
-    const expText = expMatch[1];
-    const expLines = expText.split('\n').filter(l => l.trim().length > 0);
-    const experiences = [];
-    let currentExp = null;
+    let timeoutHandle;
     
-    for (let i = 0; i < expLines.length; i++) {
-      const line = expLines[i].trim();
+    pythonProcess.on('close', (code) => {
+      clearTimeout(timeoutHandle);
+      if (code !== 0) {
+        console.error('Surya OCR Error (exit code ' + code + '):\n' + errorString);
+        return resolve(null);
+      }
       
-      // Strategy 1: Position - Company format
-      if (line.match(/[A-Za-z\s&,.-]{3,}(?:\s+[-–—|]\s+|\s+at\s+|\s+@\s+)[A-Za-z\s&,.-]{3,}/i)) {
-        if (currentExp && currentExp.position) experiences.push(currentExp);
-        
-        const parts = line.split(/\s+[-–—|]\s+|\s+at\s+|\s+@\s+/i);
-        currentExp = {
-          position: parts[0]?.trim() || '',
-          company: parts[1]?.trim() || '',
-          duration: '',
-          description: ''
-        };
+      if (errorString) {
+        console.log('Surya OCR stderr (warnings):\n' + errorString);
       }
-      // Strategy 2: Company on one line, position on next
-      else if (line.match(/^[A-Z][A-Za-z\s&,.-]{5,}(?:Ltd|Inc|Corp|LLC|Pvt|Technologies|Tech|Solutions|Systems|Services)?$/i) && !currentExp) {
-        currentExp = {
-          company: line,
-          position: '',
-          duration: '',
-          description: ''
-        };
-      }
-      // If we have company but no position, next line might be position
-      else if (currentExp && currentExp.company && !currentExp.position && line.match(/^[A-Z][A-Za-z\s]+$/)) {
-        currentExp.position = line;
-      }
-      // Check for date range - various formats
-      else if (line.match(/(?:\d{4}|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i) && line.match(/[-–—|to]/i)) {
-        if (currentExp && !currentExp.duration) {
-          currentExp.duration = line;
+      
+      try {
+        // Find the last JSON object in stdout (ignore progress/warning lines)
+        const jsonMatch = dataString.match(/(\{[\s\S]*\})\s*$/);
+        if (!jsonMatch) {
+          console.error('No JSON in OCR output. stdout:', dataString.substring(0, 500));
+          return resolve(null);
         }
+        const result = JSON.parse(jsonMatch[1]);
+        if (result.success) {
+          console.log('Surya OCR extraction successful!');
+          resolve(result.data);
+        } else {
+          console.error('Surya OCR failed:', result.error);
+          resolve(null);
+        }
+      } catch (error) {
+        console.error('Failed to parse Surya OCR output:', error.message);
+        console.error('Raw stdout:', dataString.substring(0, 500));
+        resolve(null);
       }
-      // Description lines - anything substantial
-      else if (currentExp && line.length > 20 && !line.match(/^[A-Z\s]{10,}$/) && currentExp.position) {
-        currentExp.description += (currentExp.description ? ' ' : '') + line.replace(/^[-•·●∙]\s*/, '');
-      }
-    }
+    });
     
-    // Push last experience
-    if (currentExp && (currentExp.position || currentExp.company)) {
-      experiences.push(currentExp);
-    }
-    
-    // Filter out invalid entries
-    data.experience = experiences.filter(exp => 
-      (exp.position && exp.position.length > 2) || (exp.company && exp.company.length > 2)
-    ).slice(0, 8);
-  }
-
-  // Extract education
-  const eduMatch = text.match(/(?:EDUCATION|ACADEMIC|QUALIFICATION)[\s:]*\n([\s\S]{30,1500}?)(?=\n(?:EXPERIENCE|PROJECTS|SKILLS|CERTIFICATIONS|[A-Z]{5,})|$)/i);
-  if (eduMatch) {
-    const eduText = eduMatch[1];
-    const eduLines = eduText.split('\n').filter(l => l.trim().length > 0);
-    const educations = [];
-    let currentEdu = null;
-    
-    for (const line of eduLines) {
-      // Degree pattern
-      if (line.match(/B\.?Tech|B\.?E\.?|M\.?Tech|M\.?E\.?|B\.?Sc|M\.?Sc|B\.?A\.?|M\.?A\.?|MBA|MCA|BCA|Bachelor|Master|Diploma|PhD/i)) {
-        if (currentEdu) educations.push(currentEdu);
-        currentEdu = { degree: line.trim(), institution: '', year: '' };
-      }
-      // Institution
-      else if (line.match(/University|College|Institute|School/i) && currentEdu) {
-        currentEdu.institution = line.trim();
-      }
-      // Year
-      else if (line.match(/\d{4}/) && currentEdu && !currentEdu.year) {
-        const yearMatch = line.match(/\d{4}/);
-        currentEdu.year = yearMatch[0];
-      }
-    }
-    if (currentEdu) educations.push(currentEdu);
-    data.education = educations.slice(0, 5);
-  }
-
-  // Extract projects with multiple strategies - MUST EXTRACT IF EXISTS
-  const projMatch = text.match(/(?:PROJECTS?|PERSONAL PROJECTS?|KEY PROJECTS?|ACADEMIC PROJECTS?|WORK PROJECTS?)[\s:]*\n([\s\S]{30,3500}?)(?=\n(?:EXPERIENCE|EDUCATION|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|LANGUAGES|[A-Z]{5,})|$)/i);
-  if (projMatch) {
-    const projText = projMatch[1];
-    const projLines = projText.split('\n').filter(l => l.trim().length > 0);
-    const projects = [];
-    let currentProj = null;
-    
-    for (let i = 0; i < projLines.length; i++) {
-      const trimmed = projLines[i].trim();
-      const nextLine = i + 1 < projLines.length ? projLines[i + 1].trim() : '';
-      
-      // Strategy 1: Project title with bullet/number
-      const titleMatch = trimmed.match(/^(?:[\d\.\)]+\s*|[-•·●∙]\s*)([A-Za-z][A-Za-z0-9\s\-:()&]{4,80})$/);
-      if (titleMatch) {
-        if (currentProj && currentProj.name) projects.push(currentProj);
-        
-        currentProj = {
-          name: titleMatch[1].trim(),
-          description: '',
-          technologies: [],
-          link: ''
-        };
-        continue;
-      }
-      
-      // Strategy 2: Capitalized title without bullets (check if not a section header)
-      if (!currentProj && trimmed.length > 5 && trimmed.length < 100 && 
-          trimmed.match(/^[A-Z]/) &&
-          !trimmed.match(/^(?:Tech|Technologies|Description|Features|Link|URL|GitHub|Demo|Duration|Responsibilities):/i) &&
-          !trimmed.match(/^[A-Z\s]{15,}$/) && // Not all caps (likely section header)
-          trimmed.split(' ').length <= 12) {
-        
-        currentProj = {
-          name: trimmed,
-          description: '',
-          technologies: [],
-          link: ''
-        };
-        continue;
-      }
-      
-      // Extract technologies
-      if (currentProj && trimmed.match(/^(?:Tech(?:nologies)?|Stack|Tools|Built with)[\s:]+/i)) {
-        const techText = trimmed.replace(/^(?:Tech(?:nologies)?|Stack|Tools|Built with)[\s:]+/i, '');
-        currentProj.technologies = techText.split(/[,|;]/).map(t => t.trim().replace(/^[-•·●∙\s]+/, '')).filter(t => t.length > 0);
-        continue;
-      }
-      
-      // Extract GitHub/project links
-      const linkMatch = trimmed.match(/(https?:\/\/[^\s]+)/);
-      if (linkMatch && currentProj && !currentProj.link) {
-        currentProj.link = linkMatch[0];
-        continue;
-      }
-      
-      // Extract description - any substantial text
-      if (currentProj && trimmed.length > 15 && 
-          !trimmed.match(/^(?:Tech|Technologies|Stack|Link|URL|GitHub|Demo):/i) &&
-          !trimmed.match(/^[A-Z\s]{10,}$/) && // Not section header
-          !trimmed.match(/^[\d\.\)]+\s*[A-Z]/) // Not next project bullet
-      ) {
-        // Clean bullet points from description
-        const cleanDesc = trimmed.replace(/^[-•·●∙]\s*/, '');
-        currentProj.description += (currentProj.description ? ' ' : '') + cleanDesc;
-      }
-    }
-    
-    // Push last project
-    if (currentProj && currentProj.name) {
-      projects.push(currentProj);
-    }
-    
-    // Filter and validate
-    data.projects = projects.filter(proj => 
-      proj.name && proj.name.length > 3
-    ).slice(0, 10);
-  }
-
-  // Extract certifications
-  const certMatch = text.match(/(?:CERTIFICATIONS?|CERTIFICATES?)[\s:]*\n([\s\S]{20,1000}?)(?=\n(?:ACHIEVEMENTS?|PROJECTS|EXPERIENCE|EDUCATION|[A-Z]{5,})|$)/i);
-  if (certMatch) {
-    const certText = certMatch[1];
-    const certLines = certText.split('\n').filter(l => l.trim().length > 5);
-    data.certifications = certLines.map(line => 
-      line.trim().replace(/^[-•·●∙\d\.\)\s]+/, '').trim()
-    ).filter(cert => cert.length > 5 && cert.length < 150).slice(0, 10);
-  }
-
-  // Extract achievements
-  const achieveMatch = text.match(/(?:ACHIEVEMENTS?|ACCOMPLISHMENTS?|AWARDS?)[\s:]*\n([\s\S]{20,1000}?)(?=\n(?:CERTIFICATIONS?|PROJECTS|EXPERIENCE|EDUCATION|[A-Z]{5,})|$)/i);
-  if (achieveMatch) {
-    const achieveText = achieveMatch[1];
-    const achieveLines = achieveText.split('\n').filter(l => l.trim().length > 5);
-    data.achievements = achieveLines.map(line => 
-      line.trim().replace(/^[-•·●∙\d\.\)\s]+/, '').trim()
-    ).filter(ach => ach.length > 5 && ach.length < 200).slice(0, 10);
-  }
-
-  // Extract languages
-  const langMatch = text.match(/(?:LANGUAGES?)[\s:]*\n([\s\S]{10,300}?)(?=\n(?:[A-Z]{5,})|$)/i);
-  if (langMatch) {
-    const langText = langMatch[1];
-    const langs = langText.split(/[,|\n]/).map(l => l.trim().replace(/^[-•·●∙\s]+/, '').trim());
-    data.languages = langs.filter(lang => lang.length > 2 && lang.length < 30).slice(0, 10);
-  }
-
-  return data;
+    // Set timeout for OCR process (10 min to allow model download on first run)
+    timeoutHandle = setTimeout(() => {
+      pythonProcess.kill();
+      console.error('Surya OCR timeout after 10 minutes');
+      resolve(null);
+    }, 600000);
+  });
 };
 
 /**
- * Parse resume and extract portfolio details
+ * Parse resume and extract portfolio details using Surya OCR only
  */
 exports.parseResume = async (req, res) => {
+  let tempFilePath = null;
+  
   try {
     // Check if file was uploaded
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload a resume file (PDF or DOCX)'
+        message: 'Please upload a resume file (PDF, DOCX, or image)'
       });
     }
 
-    // Extract text from uploaded file
-    const resumeText = await extractTextFromFile(req.file);
+    console.log('ðŸ” Extracting portfolio data using Surya OCR...');
+    
+    // Save file temporarily for OCR processing
+    const tempDir = path.join(__dirname, '../../temp');
+    await fs.mkdir(tempDir, { recursive: true });
+    tempFilePath = path.join(tempDir, `${Date.now()}_${req.file.originalname}`);
+    await fs.writeFile(tempFilePath, req.file.buffer);
+    
+    // Use Surya OCR for all file types
+    const portfolioData = await extractPortfolioDataWithOCR(tempFilePath);
 
-    if (!resumeText || resumeText.trim().length === 0) {
+    if (!portfolioData) {
       return res.status(400).json({
         success: false,
-        message: 'Could not extract text from the uploaded file'
+        message: 'Could not extract data from resume. Please ensure the file is readable and contains standard resume sections (Education, Experience, Skills, etc.).'
       });
     }
 
-    console.log('📄 Extracted text length:', resumeText.length);
-
-    // Try AI extraction first
-    let portfolioData = await extractPortfolioDataWithAI(resumeText);
-
-    // If AI extraction fails or returns null, use regex fallback
-    if (!portfolioData) {
-      console.log('📊 Using regex extraction method');
-      portfolioData = extractPortfolioData(resumeText);
-    } else {
-      console.log('🎉 AI extraction successful!');
+    // Clean up temporary file
+    if (tempFilePath) {
+      try {
+        await fs.unlink(tempFilePath);
+      } catch (err) {
+        console.error('Failed to delete temp file:', err);
+      }
     }
 
     res.json({
@@ -607,6 +174,16 @@ exports.parseResume = async (req, res) => {
     });
   } catch (error) {
     console.error('Resume parsing error:', error);
+    
+    // Clean up temporary file on error
+    if (tempFilePath) {
+      try {
+        await fs.unlink(tempFilePath);
+      } catch (err) {
+        console.error('Failed to delete temp file:', err);
+      }
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to parse resume',
@@ -670,8 +247,7 @@ exports.deployPortfolio = async (req, res) => {
       skills: portfolioData.skills || [],
       projects: portfolioData.projects || [],
       certifications: portfolioData.certifications || [],
-      achievements: portfolioData.achievements || [],
-      languages: portfolioData.languages || []
+      achievements: portfolioData.achievements || []
     });
 
     // Generate portfolio URL
@@ -702,7 +278,7 @@ exports.getPortfolio = async (req, res) => {
     const { portfolioId } = req.params;
 
     const portfolio = await Portfolio.findOne({ portfolioId, isPublished: true });
-    
+
     if (!portfolio) {
       return res.status(404).json({
         success: false,
@@ -727,6 +303,7 @@ exports.getPortfolio = async (req, res) => {
     });
   }
 };
+
 
 /**
  * Get user's portfolios
@@ -786,7 +363,6 @@ exports.updatePortfolio = async (req, res) => {
       if (portfolioData.projects !== undefined) portfolio.projects = portfolioData.projects;
       if (portfolioData.certifications !== undefined) portfolio.certifications = portfolioData.certifications;
       if (portfolioData.achievements !== undefined) portfolio.achievements = portfolioData.achievements;
-      if (portfolioData.languages !== undefined) portfolio.languages = portfolioData.languages;
     }
 
     await portfolio.save();
@@ -873,10 +449,10 @@ function generatePortfolioHTML(data, template) {
         <h1>${data.name}</h1>
         <p class="title">${data.title}</p>
         <div class="contact">
-            ${data.email ? `<a href="mailto:${data.email}">📧 ${data.email}</a>` : ''}
-            ${data.phone ? `<span>📱 ${data.phone}</span>` : ''}
-            ${data.location ? `<span>📍 ${data.location}</span>` : ''}
-            ${data.github ? `<a href="${data.github}" target="_blank">💻 GitHub</a>` : ''}
+            ${data.email ? `<a href="mailto:${data.email}">ðŸ“§ ${data.email}</a>` : ''}
+            ${data.phone ? `<span>ðŸ“± ${data.phone}</span>` : ''}
+            ${data.location ? `<span>ðŸ“ ${data.location}</span>` : ''}
+            ${data.github ? `<a href="${data.github}" target="_blank">ðŸ’» GitHub</a>` : ''}
         </div>
     </header>
 
@@ -922,7 +498,7 @@ function generatePortfolioHTML(data, template) {
                             ${proj.technologies.map(tech => `<span class="skill">${tech}</span>`).join('')}
                         </div>
                     ` : ''}
-                    ${proj.link ? `<a href="${proj.link}" target="_blank">View Project →</a>` : ''}
+                    ${proj.link ? `<a href="${proj.link}" target="_blank">View Project â†’</a>` : ''}
                 </div>
             `).join('')}
         </section>
@@ -943,7 +519,7 @@ function generatePortfolioHTML(data, template) {
     </div>
 
     <footer>
-        <p>© ${new Date().getFullYear()} ${data.name}. All rights reserved.</p>
+        <p>Â© ${new Date().getFullYear()} ${data.name}. All rights reserved.</p>
         <p>Built with Placify Portfolio Generator</p>
     </footer>
 </body>
