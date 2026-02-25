@@ -7,12 +7,11 @@ Placify is a full-stack MERN application that helps job seekers build profession
 ## 🌟 Features
 
 - **📄 Resume Builder**: Create professional resumes with multiple templates (LaTeX & DOCX export)
-- **💼 Portfolio Generator**: Auto-generate portfolios from resumes using Surya OCR
+- **💼 Portfolio Generator**: Auto-generate portfolios by uploading a resume (PDF/DOCX) — text is extracted and parsed using **Groq API (llama-3.3-70b-versatile)** to produce a structured portfolio
 - **📊 ATS Analyzer**: Analyze your resume with ATS scoring for better job matching
 - **📝 Job Tracker**: Track all your job applications in one organized place
 - **🎥 Mock Interview**: Practice with AI-based mock interviews
 - **✅ Aptitude Tests**: Test your skills with placement readiness assessments
-- **🔍 Surya OCR Integration**: Extract data from scanned resumes and images
 
 ## 🛠️ Tech Stack
 
@@ -25,10 +24,10 @@ Placify is a full-stack MERN application that helps job seekers build profession
 - Node.js & Express.js
 - MongoDB with Mongoose
 - JWT Authentication
-- Python (Surya OCR, ATS Scoring)
+- Python (ATS Scoring)
 
 ### AI/ML
-- Surya OCR for resume text extraction
+- **Groq API (`llama-3.3-70b-versatile`)** for resume parsing and portfolio data extraction
 - Sentence Transformers for ATS scoring
 - Hugging Face API integration
 
