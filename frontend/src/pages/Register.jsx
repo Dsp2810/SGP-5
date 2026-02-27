@@ -5,6 +5,7 @@ function Register() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -13,12 +14,39 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'invalid'
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // Real-time username check
+    if (name === 'username') {
+      const val = value.toLowerCase().trim();
+      if (!val || val.length < 3) {
+        setUsernameStatus(val.length > 0 ? 'invalid' : null);
+        return;
+      }
+      if (!/^[a-z0-9_-]{3,30}$/.test(val)) {
+        setUsernameStatus('invalid');
+        return;
+      }
+      setUsernameStatus('checking');
+      // Debounced check
+      clearTimeout(window._usernameTimer);
+      window._usernameTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/api/auth/check-username/${val}`);
+          const data = await res.json();
+          setUsernameStatus(data.available ? 'available' : 'taken');
+        } catch {
+          setUsernameStatus(null);
+        }
+      }, 400);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -40,6 +68,7 @@ function Register() {
         },
         body: JSON.stringify({
           name: formData.name,
+          username: formData.username.toLowerCase().trim(),
           email: formData.email.toLowerCase().trim(),
           password: formData.password
         })
@@ -116,6 +145,54 @@ function Register() {
                 placeholder="John Doe"
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              Username <span className="text-gray-400 font-normal">(your portfolio URL)</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-400 text-sm font-medium">@</span>
+              </div>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+                className={`w-full pl-10 pr-10 py-3 bg-gray-50 border rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 transition duration-200 ${
+                  usernameStatus === 'available' ? 'border-green-400 focus:ring-green-300 focus:border-green-400' :
+                  usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-400 focus:ring-red-300 focus:border-red-400' :
+                  'border-gray-300 focus:ring-gray-400 focus:border-gray-400'
+                }`}
+                placeholder="johndoe"
+              />
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                {usernameStatus === 'checking' && (
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                )}
+                {usernameStatus === 'available' && (
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                )}
+                {usernameStatus === 'taken' && (
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                )}
+                {usernameStatus === 'invalid' && (
+                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" /></svg>
+                )}
+              </div>
+            </div>
+            {usernameStatus === 'available' && (
+              <p className="mt-1 text-xs text-green-600">✓ placify.vercel.app/{formData.username.toLowerCase()}</p>
+            )}
+            {usernameStatus === 'taken' && (
+              <p className="mt-1 text-xs text-red-600">Username is already taken</p>
+            )}
+            {usernameStatus === 'invalid' && (
+              <p className="mt-1 text-xs text-red-500">3-30 chars: lowercase letters, numbers, hyphens, underscores</p>
+            )}
           </div>
 
           <div>

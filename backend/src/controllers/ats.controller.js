@@ -89,11 +89,10 @@ exports.analyzeResume = async (req, res) => {
     const { spawn } = require('child_process');
     
     // Use full Python path to ensure correct environment
-    const pythonPath = 'C:\\Users\\HP\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe';
+    const pythonPath = process.env.PYTHON_PATH || 'python3';
     
     const python = spawn(pythonPath, [pythonScript, resumeText, jobDescription], {
       stdio: ['pipe', 'pipe', 'pipe'],
-      windowsHide: true
     });
     
     let stdout = '';

@@ -41,8 +41,9 @@ function Login() {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store token in localStorage
+      // Store token and username in localStorage
       localStorage.setItem('token', data.token);
+      if (data.username) localStorage.setItem('username', data.username);
       
       // Navigate to dashboard
       navigate('/dashboard');

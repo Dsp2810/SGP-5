@@ -11,6 +11,10 @@ const portfolioSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  username: {
+    type: String,
+    index: true
+  },
   template: {
     type: String,
     default: 'template1'
@@ -57,6 +61,17 @@ const portfolioSchema = new mongoose.Schema({
   views: {
     type: Number,
     default: 0
+  },
+  vercelDeployment: {
+    deploymentId: String,
+    url: String,
+    projectId: String,
+    deployedAt: Date,
+    status: {
+      type: String,
+      enum: ['pending', 'ready', 'error', null],
+      default: null
+    }
   }
 }, {
   timestamps: true

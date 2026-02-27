@@ -5,16 +5,27 @@ const emailService = require("../services/emailService");
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, username } = req.body;
 
     // Normalize email to lowercase
     const normalizedEmail = email.toLowerCase().trim();
+
+    // Validate username
+    const normalizedUsername = (username || '').toLowerCase().trim();
+    if (!normalizedUsername || !/^[a-z0-9_-]{3,30}$/.test(normalizedUsername)) {
+      return res.status(400).json({ message: "Username must be 3-30 characters (lowercase letters, numbers, hyphens, underscores only)" });
+    }
+
+    // Check if username is taken
+    const usernameExists = await User.findOne({ username: normalizedUsername });
+    if (usernameExists)
+      return res.status(400).json({ message: "Username is already taken" });
 
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists)
       return res.status(400).json({ message: "User already exists" });
 
-    const user = await User.create({ name, email: normalizedEmail, password });
+    const user = await User.create({ name, email: normalizedEmail, password, username: normalizedUsername });
 
     res.status(201).json({
       message: "User registered successfully"
@@ -46,7 +57,7 @@ exports.login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE }
     );
 
-    res.json({ token, message:"Login Successfully !"});
+    res.json({ token, username: user.username, message:"Login Successfully !"});
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: "Login failed. Please try again." });
@@ -65,6 +76,7 @@ exports.getMe = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      username: user.username,
       role: user.role
     });
   } catch (error) {
@@ -239,5 +251,22 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ message: "Password reset failed" });
+  }
+};
+
+/**
+ * Check username availability
+ * GET /api/auth/check-username/:username
+ */
+exports.checkUsername = async (req, res) => {
+  try {
+    const username = req.params.username.toLowerCase().trim();
+    if (!/^[a-z0-9_-]{3,30}$/.test(username)) {
+      return res.json({ available: false, message: "Invalid username format" });
+    }
+    const exists = await User.findOne({ username });
+    res.json({ available: !exists });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
 };

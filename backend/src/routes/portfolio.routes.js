@@ -30,6 +30,9 @@ router.post('/parse-resume', protect, upload.single('resume'), portfolioControll
 // Deploy portfolio and return link
 router.post('/deploy', protect, portfolioController.deployPortfolio);
 
+// Deploy portfolio to Vercel
+router.post('/deploy-vercel/:portfolioId', protect, portfolioController.deployToVercel);
+
 // Get user's portfolios
 router.get('/my-portfolios', protect, portfolioController.getUserPortfolios);
 
@@ -38,6 +41,9 @@ router.put('/:portfolioId', protect, portfolioController.updatePortfolio);
 
 // Delete portfolio
 router.delete('/:portfolioId', protect, portfolioController.deletePortfolio);
+
+// Public route - Get portfolio by username (no auth required)
+router.get('/u/:username', portfolioController.getPortfolioByUsername);
 
 // Public route - Get portfolio by ID (no auth required)
 router.get('/:portfolioId', portfolioController.getPortfolio);

@@ -6,13 +6,15 @@ const {
   getMe,
   forgotPassword,
   verifyOTP,
-  resetPassword
+  resetPassword,
+  checkUsername
 } = require("../controllers/auth.controller");
 const { protect } = require("../middleware/auth.middleware");
 
 // Public Routes
 router.post("/register", register);
 router.post("/login", login);
+router.get("/check-username/:username", checkUsername);
 
 // Password Reset Routes
 router.post("/forgot-password", forgotPassword);

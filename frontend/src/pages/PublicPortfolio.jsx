@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
   Template1, Template2, Template3, Template4, Template5,
   Template6, Template7, Template8, Template9, Template10
@@ -19,7 +19,8 @@ const TEMPLATES = {
 };
 
 export default function PublicPortfolio() {
-  const { id } = useParams();
+  const { id, username } = useParams();
+  const location = useLocation();
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +28,13 @@ export default function PublicPortfolio() {
   useEffect(() => {
     const fetchPortfolio = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/portfolio/${id}`);
+        // Determine if this is a /p/:id route or /:username route
+        const isIdRoute = location.pathname.startsWith('/p/');
+        const apiUrl = isIdRoute
+          ? `http://localhost:5000/api/portfolio/${id}`
+          : `http://localhost:5000/api/portfolio/u/${username}`;
+
+        const res = await fetch(apiUrl);
         const result = await res.json();
         if (!result.success) {
           setError(result.message || 'Portfolio not found');
@@ -41,7 +48,7 @@ export default function PublicPortfolio() {
       }
     };
     fetchPortfolio();
-  }, [id]);
+  }, [id, username, location.pathname]);
 
   if (loading) {
     return (

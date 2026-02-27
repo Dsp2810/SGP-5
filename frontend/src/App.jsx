@@ -40,6 +40,9 @@ function App() {
           <Route path="interview" element={<MockInterview />} />
           <Route path="aptitude" element={<AptitudeTest />} />
         </Route>
+
+        {/* Username-based portfolio (must be last — catch-all for /:username) */}
+        <Route path="/:username" element={<PublicPortfolio />} />
       </Routes>
     </Router>
   )

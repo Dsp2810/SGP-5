@@ -23,7 +23,7 @@ exports.generateMCQs = async (req, res) => {
     const pythonScript = path.join(__dirname, '../services/aptitudeRAG.py');
     const pythonCmd =
       process.env.PYTHON_PATH ||
-      'C:/Users/HP/AppData/Local/GitHubDesktop/SGP-5/.venv/Scripts/python.exe';
+      'python3';
 
     let output = '';
     let errorOutput = '';
