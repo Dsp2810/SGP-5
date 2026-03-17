@@ -20,12 +20,12 @@ function DashboardHome() {
       link: '/dashboard/ats',
       color: 'from-orange-500 to-orange-600'
     },
-    {
-      title: 'Mock Interview',
-      icon: '🎥',
-      link: '/dashboard/interview',
-      color: 'from-red-500 to-red-600'
-    },
+    // {
+    //   title: 'Mock Interview',
+    //   icon: '🎥',
+    //   link: '/dashboard/interview',
+    //   color: 'from-red-500 to-red-600'
+    // },
     {
       title: 'Job Tracker',
       icon: '📊',

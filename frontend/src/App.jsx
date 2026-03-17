@@ -10,7 +10,7 @@ import PortfolioGenerator from './components/features/PortfolioGenerator'
 import ResumeBuilder from './components/features/ResumeBuilder'
 import JobTracker from './components/features/JobTracker'
 import ATSAnalyzer from './components/features/ATSAnalyzer'
-import MockInterview from './components/features/MockInterview'
+// import MockInterview from './components/features/MockInterview'
 import AptitudeTest from './components/features/AptitudeTest'
 import PublicPortfolio from './pages/PublicPortfolio'
 // Protected Route
@@ -37,7 +37,7 @@ function App() {
           <Route path="resume" element={<ResumeBuilder />} />
           <Route path="jobs" element={<JobTracker />} />
           <Route path="ats" element={<ATSAnalyzer />} />
-          <Route path="interview" element={<MockInterview />} />
+          {/* <Route path="interview" element={<MockInterview />} /> */}
           <Route path="aptitude" element={<AptitudeTest />} />
         </Route>
 
