@@ -1,6 +1,4 @@
-const defaultApiBaseUrl = import.meta.env.PROD
-  ? 'https://sgp-5.onrender.com'
-  : 'http://localhost:5000';
+const defaultApiBaseUrl = 'https://sgp-5.onrender.com';
 
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl;
 
