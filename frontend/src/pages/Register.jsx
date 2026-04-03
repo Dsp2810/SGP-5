@@ -142,6 +142,7 @@ function Register() {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                autoComplete="name"
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200"
                 placeholder="John Doe"
               />
@@ -163,6 +164,7 @@ function Register() {
                 value={formData.username}
                 onChange={handleChange}
                 required
+                autoComplete="username"
                 className={`w-full pl-10 pr-10 py-3 bg-gray-50 border rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 transition duration-200 ${
                   usernameStatus === 'available' ? 'border-green-400 focus:ring-green-300 focus:border-green-400' :
                   usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-400 focus:ring-red-300 focus:border-red-400' :
@@ -213,6 +215,7 @@ function Register() {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                autoComplete="email"
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200"
                 placeholder="you@example.com"
               />
@@ -236,6 +239,7 @@ function Register() {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                autoComplete="new-password"
                 className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200"
                 placeholder="••••••••"
               />
@@ -275,6 +279,7 @@ function Register() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
+                autoComplete="new-password"
                 className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200"
                 placeholder="••••••••"
               />

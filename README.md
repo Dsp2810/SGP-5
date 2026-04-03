@@ -85,6 +85,11 @@ EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
 ```
 
+For the frontend, set the API base URL during deployment if the backend is not served from the same origin:
+```env
+VITE_API_BASE_URL=https://your-backend-domain.com
+```
+
 ## 🚀 Running the Application
 
 ### Development Mode

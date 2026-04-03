@@ -1,4 +1,9 @@
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const isBrowser = typeof window !== 'undefined';
+const defaultApiBaseUrl = import.meta.env.DEV && !isBrowser
+  ? 'http://localhost:5000'
+  : (isBrowser ? window.location.origin : 'http://localhost:5000');
+
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl;
 
 const normalizedApiBaseUrl = rawApiBaseUrl.replace(/\/+$/, '');
 
