@@ -1,7 +1,6 @@
-const isBrowser = typeof window !== 'undefined';
-const defaultApiBaseUrl = import.meta.env.DEV && !isBrowser
-  ? 'http://localhost:5000'
-  : (isBrowser ? window.location.origin : 'http://localhost:5000');
+const defaultApiBaseUrl = import.meta.env.PROD
+  ? 'https://sgp-5.onrender.com'
+  : 'http://localhost:5000';
 
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl;
 
