@@ -83,6 +83,10 @@ CLOUDINARY_API_SECRET=your_api_secret
 EMAIL_HOST=smtp.gmail.com
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
+
+# Deployment: allow your frontend origin to call the backend
+CORS_ORIGIN=https://placify.dev
+FRONTEND_URL=https://placify.dev
 ```
 
 For the frontend, set the API base URL during deployment if the backend is not served from the same origin:
