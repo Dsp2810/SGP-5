@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
+import { apiUrl } from '../lib/api';
 import {
   Template1, Template2, Template3, Template4, Template5,
   Template6, Template7, Template8, Template9, Template10
@@ -30,18 +31,18 @@ export default function PublicPortfolio() {
       try {
         // Determine if this is a /p/:id route or /:username route
         const isIdRoute = location.pathname.startsWith('/p/');
-        const apiUrl = isIdRoute
-          ? `http://localhost:5000/api/portfolio/${id}`
-          : `http://localhost:5000/api/portfolio/u/${username}`;
+        const portfolioUrl = isIdRoute
+          ? apiUrl(`/portfolio/${id}`)
+          : apiUrl(`/portfolio/u/${username}`);
 
-        const res = await fetch(apiUrl);
+        const res = await fetch(portfolioUrl);
         const result = await res.json();
         if (!result.success) {
           setError(result.message || 'Portfolio not found');
         } else {
           setPortfolio(result.portfolio);
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load portfolio. Please try again.');
       } finally {
         setLoading(false);

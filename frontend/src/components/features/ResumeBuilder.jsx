@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiUrl, assetUrl } from '../../lib/api';
 
 function ResumeBuilder() {
   const [format, setFormat] = useState('pdf');
@@ -360,7 +361,7 @@ function ResumeBuilder() {
       
       // Always generate DOCX from backend first
       setMessage('Generating resume...');
-      const response = await fetch('http://localhost:5000/api/resume/generate', {
+      const response = await fetch(apiUrl('/resume/generate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -375,7 +376,7 @@ function ResumeBuilder() {
         throw new Error(data.message || 'Failed to generate resume');
       }
 
-      const docxUrl = `http://localhost:5000${data.data.downloadUrl}`;
+      const docxUrl = assetUrl(data.data.downloadUrl);
 
       // If PDF is selected, convert Word to PDF
       if (format === 'pdf') {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiUrl } from '../../lib/api';
 
 function ATSAnalyzer() {
   const [resumeFile, setResumeFile] = useState(null);
@@ -38,7 +39,7 @@ function ATSAnalyzer() {
       formData.append('resume', resumeFile);
       formData.append('jobDescription', jobDescription);
 
-      const response = await fetch('http://localhost:5000/api/ats/analyze', {
+      const response = await fetch(apiUrl('/ats/analyze'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

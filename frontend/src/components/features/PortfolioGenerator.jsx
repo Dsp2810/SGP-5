@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Template1, Template2, Template3, Template4, Template5,
   Template6, Template7, Template8, Template9, Template10
 } from '../templates';
+import { apiUrl } from '../../lib/api';
 
 const TEMPLATES_MAP = {
   template1: Template1, template2: Template2, template3: Template3,
@@ -24,7 +25,7 @@ const TEMPLATE_META = [
   { key: 'template10', name: 'Indigo Violet', desc: 'Creative tech-savvy', gradient: 'from-indigo-600 to-violet-600', ring: 'ring-indigo-200 border-indigo-500', letter: 'J', letterColor: 'text-indigo-600' }
 ];
 
-const API_BASE = 'http://localhost:5000/api/portfolio';
+const API_BASE = apiUrl('/portfolio');
 
 function PortfolioGenerator() {
   // Views: 'home' | 'create' | 'deployed'
@@ -59,9 +60,7 @@ function PortfolioGenerator() {
 
   const token = localStorage.getItem('token');
 
-  useEffect(() => { fetchMyPortfolios(); }, []);
-
-  const fetchMyPortfolios = async () => {
+  const fetchMyPortfolios = useCallback(async () => {
     setLoadingPortfolios(true);
     try {
       const res = await fetch(`${API_BASE}/my-portfolios`, {
@@ -69,12 +68,16 @@ function PortfolioGenerator() {
       });
       const result = await res.json();
       if (result.success) setMyPortfolios(result.portfolios || []);
-    } catch (err) {
-      console.error('Fetch portfolios error:', err);
+    } catch {
+      console.error('Fetch portfolios error');
     } finally {
       setLoadingPortfolios(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchMyPortfolios();
+  }, [fetchMyPortfolios]);
 
   // ────── Resume Upload ──────
   const handleResumeUpload = async (e) => {
@@ -112,7 +115,7 @@ function PortfolioGenerator() {
       } else {
         setError(result.message || 'Failed to parse resume');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to process resume. Please try again.');
     } finally {
       setLoading(false);
@@ -160,7 +163,7 @@ function PortfolioGenerator() {
       } else {
         setError(result.message || 'Deployment failed');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to deploy. Please try again.');
     } finally {
       setLoading(false);
@@ -184,7 +187,7 @@ function PortfolioGenerator() {
       } else {
         setError(result.message || 'Vercel deployment failed');
       }
-    } catch (err) {
+    } catch {
       setError('Vercel deployment failed. Please try again.');
     } finally {
       setVercelDeploying(false);
@@ -204,7 +207,7 @@ function PortfolioGenerator() {
         setSuccessMsg('Portfolio deleted');
         fetchMyPortfolios();
       }
-    } catch (err) {
+    } catch {
       setError('Failed to delete portfolio');
     }
   };

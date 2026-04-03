@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { indianStates, getCitiesForState } from '../../data/indianLocations';
+import { apiUrl } from '../../lib/api';
 
 function JobTracker() {
   const [jobs, setJobs] = useState([]);
@@ -92,7 +93,7 @@ function JobTracker() {
       if (roleCategory) params.append('roleCategory', roleCategory);
 
       const response = await fetch(
-        `http://localhost:5000/api/jobs/search?${params.toString()}`,
+        `${apiUrl('/jobs/search')}?${params.toString()}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`

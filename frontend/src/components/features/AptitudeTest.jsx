@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiUrl } from '../../lib/api';
 
 // Sub-topics per category
 const SUB_TOPICS = {
@@ -152,7 +153,7 @@ function AptitudeTest() {
     setCurrentQuestion(0);
 
     try {
-      const response = await fetch('http://localhost:5000/api/aptitude/generate', {
+      const response = await fetch(apiUrl('/aptitude/generate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

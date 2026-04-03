@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { apiUrl } from '../lib/api';
 
 function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -14,7 +15,7 @@ function Dashboard() {
         const token = localStorage.getItem('token');
         if (!token) return;
         
-        const response = await fetch('http://localhost:5000/api/auth/me', {
+        const response = await fetch(apiUrl('/auth/me'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }

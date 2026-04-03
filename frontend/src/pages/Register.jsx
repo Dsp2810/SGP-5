@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { apiUrl } from '../lib/api';
 
 function Register() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ function Register() {
       clearTimeout(window._usernameTimer);
       window._usernameTimer = setTimeout(async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/auth/check-username/${val}`);
+          const res = await fetch(apiUrl(`/auth/check-username/${encodeURIComponent(val)}`));
           const data = await res.json();
           setUsernameStatus(data.available ? 'available' : 'taken');
         } catch {
@@ -61,7 +62,7 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(apiUrl('/auth/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
