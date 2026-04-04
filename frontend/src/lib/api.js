@@ -2,7 +2,10 @@ const defaultApiBaseUrl = 'https://sgp-5.onrender.com';
 
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl;
 
-const normalizedApiBaseUrl = rawApiBaseUrl.replace(/\/+$/, '');
+// Accept both "https://host" and "https://host/api" in env without duplicating /api.
+const normalizedApiBaseUrl = rawApiBaseUrl
+  .replace(/\/+$/, '')
+  .replace(/\/api$/i, '');
 
 export const API_ORIGIN = normalizedApiBaseUrl;
 export const API_BASE = `${normalizedApiBaseUrl}/api`;
