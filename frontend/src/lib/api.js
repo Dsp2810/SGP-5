@@ -2,8 +2,18 @@ const defaultApiBaseUrl = 'https://sgp-5.onrender.com';
 
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl;
 
+const isLocalApiUrl = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(rawApiBaseUrl);
+const isLocalFrontend =
+  typeof window !== 'undefined' &&
+  /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+
+// Avoid shipping localhost API targets to production deploys.
+const effectiveApiBaseUrl = !isLocalFrontend && isLocalApiUrl
+  ? defaultApiBaseUrl
+  : rawApiBaseUrl;
+
 // Accept both "https://host" and "https://host/api" in env without duplicating /api.
-const normalizedApiBaseUrl = rawApiBaseUrl
+const normalizedApiBaseUrl = effectiveApiBaseUrl
   .replace(/\/+$/, '')
   .replace(/\/api$/i, '');
 
