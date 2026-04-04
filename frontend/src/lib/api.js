@@ -20,6 +20,9 @@ const normalizedApiBaseUrl = effectiveApiBaseUrl
 export const API_ORIGIN = normalizedApiBaseUrl;
 export const API_BASE = `${normalizedApiBaseUrl}/api`;
 
+console.log("ENV URL:", import.meta.env.VITE_API_BASE_URL);
+console.log("API BASE:", API_BASE);
+
 export const apiUrl = (path = '') => {
   if (!path) {
     return API_BASE;
